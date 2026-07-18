@@ -23,17 +23,12 @@ const KEYS = {
 };
 
 export function saveValue(key, value) {
-  sessionStorage.setItem(
-    KEYS[key],
-    JSON.stringify(value)
-  );
+  sessionStorage.setItem(KEYS[key], JSON.stringify(value));
 }
 
 export function readValue(key, fallback = null) {
   const raw = sessionStorage.getItem(KEYS[key]);
-
   if (!raw) return fallback;
-
   try {
     return JSON.parse(raw);
   } catch {
@@ -42,38 +37,14 @@ export function readValue(key, fallback = null) {
 }
 
 export function clearGeneratedState() {
-  [
-    'profile',
-    'analysis',
-    'ideas',
-    'selectedIdea',
-    'plan',
-    'ideaAnalysis',
-    'ideaForm',
-    'buildProgress',
-    'progressToken',
-    'customerPlan',
-    'decisionReport',
-    'businessPlan',
-    'customerInsights',
-    'marketIntelligence',
-    'investorTools',
-    'marketingHub',
-    'developmentHub',
-    'growthHub',
-    'financialPlan',
-    'launchHub',
-  ].forEach((key) => {
+  ['profile', 'analysis', 'ideas', 'selectedIdea', 'plan', 'ideaAnalysis', 'ideaForm', 'buildProgress', 'progressToken', 'customerPlan', 'decisionReport', 'businessPlan', 'customerInsights', 'marketIntelligence', 'investorTools', 'marketingHub', 'developmentHub', 'growthHub', 'financialPlan', 'launchHub'].forEach((key) => {
     sessionStorage.removeItem(KEYS[key]);
   });
 }
 
 export function setSession(auth) {
   saveValue('session', auth);
-
-  window.dispatchEvent(
-    new CustomEvent('auth-changed')
-  );
+  window.dispatchEvent(new Event('startingup:session-changed'));
 }
 
 export function getSession() {
@@ -82,8 +53,5 @@ export function getSession() {
 
 export function clearSession() {
   sessionStorage.removeItem(KEYS.session);
-
-  window.dispatchEvent(
-    new CustomEvent('auth-changed')
-  );
+  window.dispatchEvent(new Event('startingup:session-changed'));
 }

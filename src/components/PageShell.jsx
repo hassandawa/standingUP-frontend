@@ -143,7 +143,18 @@ export function BrandLink({ inverted = false, size = 'sm' }) {
 export function AppNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const session = getSession();
+  const [session, setSessionState] = useState(() => getSession());
+  useEffect(() => {
+    function refreshSession() {
+      setSessionState(getSession());
+    }
+    window.addEventListener('startingup:session-changed', refreshSession);
+    window.addEventListener('storage', refreshSession);
+    return () => {
+      window.removeEventListener('startingup:session-changed', refreshSession);
+      window.removeEventListener('storage', refreshSession);
+    };
+  }, []);
   const [showDemo, setShowDemo] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
