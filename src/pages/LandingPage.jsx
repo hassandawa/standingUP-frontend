@@ -119,9 +119,16 @@ export default function LandingPage() {
             </div>
 
             {error && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 text-xs font-black uppercase tracking-wide border-l-2 border-[#0A0A0A] pl-2 inline-block">
-                {error}
-              </motion.p>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 inline-flex flex-col items-center gap-2">
+                <p className="text-xs font-black uppercase tracking-wide border-l-2 border-[#0A0A0A] pl-2 inline-block">
+                  {error}
+                </p>
+                {error.toLowerCase().includes('upgrade') && (
+                  <Link to="/pricing" className="text-xs font-black uppercase underline hover:no-underline">
+                    View Plans →
+                  </Link>
+                )}
+              </motion.div>
             )}
           </motion.div>
 

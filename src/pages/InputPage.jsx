@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Clock, DollarSign, Factory, X, Sparkles, Lightbulb, Wand2, Mic, Square } from 'lucide-react';
 import Input from '../components/Input.jsx';
@@ -465,7 +465,16 @@ export default function InputPage() {
               </AnimatePresence>
             )}
 
-            {error && <p className="mt-8 text-xs font-black uppercase tracking-wide border-l-4 border-[#0A0A0A] pl-3">{error}</p>}
+            {error && (
+              <div className="mt-8 flex flex-col gap-2">
+                <p className="text-xs font-black uppercase tracking-wide border-l-4 border-[#0A0A0A] pl-3">{error}</p>
+                {error.toLowerCase().includes('upgrade') && (
+                  <Link to="/pricing" className="pl-3 text-xs font-black uppercase underline hover:no-underline w-fit">
+                    View Plans →
+                  </Link>
+                )}
+              </div>
+            )}
 
             {loading && (
               <div className="mt-8 border-2 border-[#0A0A0A] bg-[#F5F3EE] p-5">

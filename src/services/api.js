@@ -1190,3 +1190,33 @@ export async function deleteSavedIdea(ideaId) {
     throw new Error(apiError(error));
   }
 }
+
+export async function createCheckoutSession(plan) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/billing/create-checkout-session', { plan });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function verifyCheckout(transactionId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/billing/verify-checkout', { transaction_id: transactionId });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function cancelSubscription() {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/billing/cancel-subscription', {});
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
