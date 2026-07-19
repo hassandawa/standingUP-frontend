@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Brain, Code, Lightbulb, Play, Rocket, Search, Sparkles, Target, TrendingUp, Zap, Wand2 } from 'lucide-react';
 import { AppNav, BrandLink } from '../components/PageShell.jsx';
 import DemoVideoModal from '../components/DemoVideoModal.jsx';
+import ContactModal from '../components/ContactModal.jsx';
 import { analyzeProfile, generateIdeas } from '../services/api.js';
 import { clearGeneratedState, saveValue } from '../services/storage.js';
 
@@ -33,6 +34,7 @@ export default function LandingPage() {
   const [error, setError] = useState('');
   const [judgeMode, setJudgeMode] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
   async function handleGenerate(customProfile) {
     if (loading) return;
@@ -263,10 +265,15 @@ export default function LandingPage() {
                 {label}
               </Link>
             ))}
+            <button onClick={() => setShowContact(true)}
+              className="text-[10px] font-black uppercase tracking-widest text-[#6A6A6A] hover:text-[#0A0A0A] transition-colors">
+              Contact
+            </button>
           </nav>
           <p className="text-[10px] font-black uppercase tracking-widest text-[#6A6A6A]">&copy; 2026 startingUP</p>
         </div>
       </footer>
+      <ContactModal open={showContact} onClose={() => setShowContact(false)} />
       <DemoVideoModal open={showDemo} onClose={() => setShowDemo(false)} />
     </main>
   );

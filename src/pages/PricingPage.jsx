@@ -4,6 +4,7 @@ import { AppNav } from '../components/PageShell.jsx';
 import { Check, X, ArrowLeft, Zap, Rocket, Building2 } from 'lucide-react';
 import { createCheckoutSession, verifyCheckout, cancelSubscription } from '../services/api.js';
 import { getSession, setSession } from '../services/storage.js';
+import ContactModal from '../components/ContactModal.jsx';
 
 const plans = [
   {
@@ -74,6 +75,7 @@ export default function PricingPage() {
   const [loadingPlan, setLoadingPlan] = useState('');
   const [error, setError] = useState('');
   const [banner, setBanner] = useState('');
+  const [showContact, setShowContact] = useState(false);
   const session = getSession();
   const currentPlan = session?.user?.plan || 'free';
 
@@ -143,6 +145,7 @@ export default function PricingPage() {
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to start checkout.');
+      setShowContact(true);
     } finally {
       setLoadingPlan('');
     }
@@ -169,9 +172,22 @@ export default function PricingPage() {
           )}
           {error && (
             <div className="max-w-xl mx-auto mb-8 border-2 border-red-600 bg-red-50 text-red-700 px-4 py-3 text-xs font-bold text-center">
-              {error}
+              <p>{error}</p>
+              <button
+                onClick={() => setShowContact(true)}
+                className="mt-2 text-xs font-black uppercase underline hover:no-underline"
+              >
+                Contact Us for Help
+              </button>
             </div>
           )}
+
+          <ContactModal
+            open={showContact}
+            onClose={() => setShowContact(false)}
+            defaultSubject="Trouble upgrading my plan"
+            defaultMessage={error ? `I ran into an issue upgrading my plan: "${error}"` : ''}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((plan) => {

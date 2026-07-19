@@ -1220,3 +1220,13 @@ export async function cancelSubscription() {
     throw new Error(apiError(error));
   }
 }
+
+export async function submitContactMessage(payload) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/contact', payload);
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
