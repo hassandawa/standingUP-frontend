@@ -76,6 +76,7 @@ export default function PricingPage() {
   const [error, setError] = useState('');
   const [banner, setBanner] = useState('');
   const [showContact, setShowContact] = useState(false);
+  const [interestedPlan, setInterestedPlan] = useState('');
   const session = getSession();
   const currentPlan = session?.user?.plan || 'free';
 
@@ -145,6 +146,7 @@ export default function PricingPage() {
       window.location.href = url;
     } catch (err) {
       setError(err.message || 'Failed to start checkout.');
+      setInterestedPlan(plan.name);
       setShowContact(true);
     } finally {
       setLoadingPlan('');
@@ -177,7 +179,7 @@ export default function PricingPage() {
                 onClick={() => setShowContact(true)}
                 className="mt-2 text-xs font-black uppercase underline hover:no-underline"
               >
-                Contact Us for Help
+                Get in Touch
               </button>
             </div>
           )}
@@ -185,8 +187,8 @@ export default function PricingPage() {
           <ContactModal
             open={showContact}
             onClose={() => setShowContact(false)}
-            defaultSubject="Trouble upgrading my plan"
-            defaultMessage={error ? `I ran into an issue upgrading my plan: "${error}"` : ''}
+            defaultSubject={interestedPlan ? `Interested in the ${interestedPlan} plan` : 'Interested in upgrading'}
+            defaultMessage={interestedPlan ? `Hi! I'd like to sign up for the ${interestedPlan} plan. Please let me know how to complete payment.` : ''}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
