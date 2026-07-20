@@ -70,6 +70,16 @@ export function IdeaProvider({ children }) {
     } catch (err) {
       setError(err.message || 'Failed to load idea');
       setSelectedIdea(null);
+      // If the referenced idea no longer exists (deleted, or a stale ID
+      // left over from before a migration), stop pointing at it so this
+      // doesn't keep failing on every future page load.
+      const msg = (err.message || '').toLowerCase();
+      if (msg.includes('not found')) {
+        setSelectedIdeaId(null);
+        try {
+          localStorage.removeItem(IDEA_STORAGE_KEY);
+        } catch {}
+      }
     } finally {
       setLoading(false);
     }
