@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppNav } from '../components/PageShell.jsx';
 import { ArrowLeft, ChevronDown, ChevronUp, Users, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { adminListUsers, adminGetUserActivity } from '../services/api.js';
+import { adminListUsers, adminGetUserActivity, adminSetUserPlan } from '../services/api.js';
 
 function formatDate(d) {
   if (!d) return '—';
@@ -32,10 +32,14 @@ function PlanBadge({ plan }) {
   );
 }
 
-function ActivityRow({ user }) {
+function ActivityRow({ user, onPlanUpdated }) {
   const [open, setOpen] = useState(false);
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [overridePlan, setOverridePlan] = useState(user.plan);
+  const [overrideDays, setOverrideDays] = useState('30');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
   async function toggle() {
     if (!open && !activity) {
@@ -50,6 +54,26 @@ function ActivityRow({ user }) {
       }
     }
     setOpen((o) => !o);
+  }
+
+  async function applyOverride(e) {
+    e.stopPropagation();
+    setSaving(true);
+    setSaveMsg('');
+    try {
+      const days = overridePlan === 'free' ? null : (overrideDays === '' ? null : Number(overrideDays));
+      await adminSetUserPlan(user.id, overridePlan, days);
+      const expiresAt = (overridePlan !== 'free' && days !== null)
+        ? new Date(Date.now() + days * 86400000).toISOString()
+        : null;
+      onPlanUpdated(user.id, overridePlan, expiresAt);
+      setSaveMsg('Updated!');
+      setTimeout(() => setSaveMsg(''), 2000);
+    } catch (err) {
+      setSaveMsg(err.message || 'Failed to update.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const expiry = daysUntil(user.plan_expires_at);
@@ -106,6 +130,42 @@ function ActivityRow({ user }) {
                 </div>
               </div>
             )}
+
+            <div className="mt-4 pt-4 border-t-2 border-[#0A0A0A]/20 flex flex-wrap items-end gap-3" onClick={(e) => e.stopPropagation()}>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#6A6A6A]">Set Plan</label>
+                <select
+                  value={overridePlan}
+                  onChange={(e) => setOverridePlan(e.target.value)}
+                  className="mt-1 block h-9 border-2 border-[#0A0A0A] bg-white px-2 text-xs font-bold uppercase"
+                >
+                  <option value="free">Free</option>
+                  <option value="pro">Pro</option>
+                  <option value="team">Team</option>
+                </select>
+              </div>
+              {overridePlan !== 'free' && (
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#6A6A6A]">Days (blank = permanent)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={overrideDays}
+                    onChange={(e) => setOverrideDays(e.target.value)}
+                    placeholder="30"
+                    className="mt-1 block h-9 w-24 border-2 border-[#0A0A0A] bg-white px-2 text-xs"
+                  />
+                </div>
+              )}
+              <button
+                onClick={applyOverride}
+                disabled={saving}
+                className="h-9 px-4 border-2 border-[#0A0A0A] bg-[#0A0A0A] text-[#F5F3EE] text-[10px] font-black uppercase tracking-widest hover:bg-transparent hover:text-[#0A0A0A] transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : 'Apply'}
+              </button>
+              {saveMsg && <span className="text-xs font-bold">{saveMsg}</span>}
+            </div>
           </td>
         </tr>
       )}
@@ -133,6 +193,12 @@ export default function AdminDashboardPage() {
   }, []);
 
   const filtered = filter === 'all' ? users : users.filter((u) => u.plan === filter);
+
+  function handlePlanUpdated(userId, newPlan, newExpiresAt) {
+    setUsers((prev) => prev.map((u) => (
+      u.id === userId ? { ...u, plan: newPlan, plan_expires_at: newExpiresAt } : u
+    )));
+  }
 
   return (
     <main className="min-h-screen bg-[#F5F3EE] text-[#0A0A0A]">
@@ -187,7 +253,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((u) => <ActivityRow key={u.id} user={u} />)}
+                    {filtered.map((u) => <ActivityRow key={u.id} user={u} onPlanUpdated={handlePlanUpdated} />)}
                   </tbody>
                 </table>
               </div>

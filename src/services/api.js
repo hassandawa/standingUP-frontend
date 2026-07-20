@@ -1250,3 +1250,13 @@ export async function adminGetUserActivity(userId) {
     throw new Error(apiError(error));
   }
 }
+
+export async function adminSetUserPlan(userId, plan, days) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post(`/api/admin/users/${userId}/set-plan`, { plan, days });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
