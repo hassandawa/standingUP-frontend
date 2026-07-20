@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage.jsx';
+import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import IdeaAnalysisPage from './pages/IdeaAnalysisPage.jsx';
 import InputPage from './pages/InputPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
@@ -57,6 +58,7 @@ export default function App() {
       <Route path="/collaboration" element={<CollaborationHubPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/admin" element={<AdminDashboardPage />} />
       <Route path="/startups/:planId" element={<StartupDetailPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

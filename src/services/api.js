@@ -1230,3 +1230,23 @@ export async function submitContactMessage(payload) {
     throw new Error(apiError(error));
   }
 }
+
+export async function adminListUsers() {
+  try {
+    assertApiConfigured();
+    const { data } = await api.get('/api/admin/users');
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function adminGetUserActivity(userId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.get(`/api/admin/users/${userId}/activity`);
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
