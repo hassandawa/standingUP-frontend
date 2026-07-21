@@ -62,7 +62,7 @@ export default function MarketIntelligencePage() {
     setSaving(true);
     try {
       const ideaContext = { startup_name: selectedIdea.startup_name, pitch: selectedIdea.pitch, industry: profile?.preferred_industry || '' };
-      const res = await saveMarketIntelligence(result, ideaContext);
+      const res = await saveMarketIntelligence(result, ideaContext, savedIdea?._id);
       setNotice(res.message || 'Saved.');
     } catch (requestError) { setError(requestError.message); }
     finally { setSaving(false); }

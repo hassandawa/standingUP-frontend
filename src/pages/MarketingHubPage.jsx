@@ -73,7 +73,7 @@ export default function MarketingHubPage() {
     setSaving(true);
     try {
       const ideaContext = { startup_name: selectedIdea.startup_name, pitch: selectedIdea.pitch, industry: profile?.preferred_industry || '' };
-      const res = await saveMarketingHub(result, ideaContext);
+      const res = await saveMarketingHub(result, ideaContext, savedIdea?._id);
       setNotice(res.message || 'Saved.');
     } catch (requestError) { setError(requestError.message); }
     finally { setSaving(false); }
@@ -93,7 +93,7 @@ export default function MarketingHubPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6A6A6A] mb-2">Marketing Hub</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6A6A6A] mb-2">Marketing</p>
               <h1 className="text-4xl font-black uppercase leading-none">Brand & Marketing Assets</h1>
             </div>
             <div className="flex gap-3">

@@ -19,12 +19,12 @@ const EXPORT_TYPES = [
   { value: 'business_plan', label: 'Business Plan' },
   { value: 'customer_insights', label: 'Customer Insights' },
   { value: 'market_intelligence', label: 'Market Intelligence' },
-  { value: 'development_hub', label: 'Development Hub' },
-  { value: 'growth_hub', label: 'Growth Hub' },
+  { value: 'development_hub', label: 'Development' },
+  { value: 'growth_hub', label: 'Growth' },
   { value: 'financial_plan', label: 'Financial Plan' },
-  { value: 'marketing_hub', label: 'Marketing Hub' },
+  { value: 'marketing_hub', label: 'Marketing' },
   { value: 'investor_tools', label: 'Investor Tools' },
-  { value: 'launch_hub', label: 'Launch Hub' },
+  { value: 'launch_hub', label: 'Launch' },
 ];
 
 function downloadFile(content, filename, mimeType) {
@@ -298,13 +298,22 @@ export default function CollaborationHubPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="border-2 border-[#0A0A0A] bg-white p-6">
                     <h2 className="text-sm font-black uppercase tracking-widest mb-4"><Plus className="h-4 w-4 inline" /> Create Team</h2>
-                    <div className="space-y-3">
-                      <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Team name" className="w-full h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs font-bold outline-none" />
-                      <input value={teamDesc} onChange={e => setTeamDesc(e.target.value)} placeholder="Description (optional)" className="w-full h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs outline-none" />
-                      <button onClick={handleCreateTeam} disabled={loading || !teamName.trim()} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
-                        <UserPlus className="h-4 w-4" /> Create Team
-                      </button>
-                    </div>
+                    {session?.user?.plan === 'team' ? (
+                      <div className="space-y-3">
+                        <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Team name" className="w-full h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs font-bold outline-none" />
+                        <input value={teamDesc} onChange={e => setTeamDesc(e.target.value)} placeholder="Description (optional)" className="w-full h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs outline-none" />
+                        <button onClick={handleCreateTeam} disabled={loading || !teamName.trim()} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
+                          <UserPlus className="h-4 w-4" /> Create Team
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-xs font-bold text-[#6A6A6A] mb-4">Creating a team and inviting collaborators requires the Team plan.</p>
+                        <Link to="/pricing" className="inline-block h-10 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest leading-10">
+                          Upgrade to Team
+                        </Link>
+                      </div>
+                    )}
                   </div>
                   <div className="border-2 border-[#0A0A0A] bg-white p-6">
                     <h2 className="text-sm font-black uppercase tracking-widest mb-4"><LogIn className="h-4 w-4 inline" /> Join Team</h2>

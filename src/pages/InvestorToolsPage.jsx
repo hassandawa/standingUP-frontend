@@ -107,7 +107,7 @@ export default function InvestorToolsPage() {
         pitch: selectedIdea.pitch,
         industry: profile?.preferred_industry || '',
       };
-      const res = await saveInvestorTools(result, ideaContext);
+      const res = await saveInvestorTools(result, ideaContext, savedIdea?._id);
       setNotice(res.message || 'Saved.');
     } catch (requestError) {
       setError(requestError.message);

@@ -81,7 +81,7 @@ export default function DevelopmentHubPage() {
     setSaving(true);
     try {
       const ideaContext = { startup_name: selectedIdea.startup_name, pitch: selectedIdea.pitch, industry: profile?.preferred_industry || '' };
-      const res = await saveDevelopmentHub(result, ideaContext);
+      const res = await saveDevelopmentHub(result, ideaContext, savedIdea?._id);
       setNotice(res.message || 'Saved.');
     } catch (requestError) { setError(requestError.message); }
     finally { setSaving(false); }
@@ -99,7 +99,7 @@ export default function DevelopmentHubPage() {
       <main className="pt-[104px] pb-24 px-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-[#0A0A0A]">Development Hub</h1>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-[#0A0A0A]">Development</h1>
             <p className="text-sm text-[#6A6A6A] mt-1">Database schemas, API endpoints, project structure, README & deployment guides for {selectedIdea?.startup_name || 'your startup'}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ export default function DevelopmentHubPage() {
         {loading && (
           <div className="p-12 border-2 border-[#0A0A0A] text-center animate-pulse">
             <Server className="h-8 w-8 mx-auto mb-4 text-[#6A6A6A]" />
-            <p className="text-sm font-bold uppercase tracking-widest text-[#6A6A6A]">Generating Development Hub...</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-[#6A6A6A]">Generating Development...</p>
           </div>
         )}
 

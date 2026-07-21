@@ -269,7 +269,7 @@ export default function LandingPage() {
               </Link>
             ))}
             <button onClick={() => setShowContact(true)}
-              className="text-[10px] font-black uppercase tracking-widest text-[#6A6A6A] hover:text-[#0A0A0A] transition-colors">
+              className="text-[10px] font-black uppercase tracking-widest text-[#6A6A6A] hover:text-[#0A0A0A] transition-colors bg-transparent border-0 p-0 m-0 leading-none font-sans">
               Contact
             </button>
           </nav>

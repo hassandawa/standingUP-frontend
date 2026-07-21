@@ -8,11 +8,11 @@ import { clearSession, getSession } from '../services/storage.js';
 const FEATURES = [
   { label: 'AI Co-Founder', path: '/ai-cofounder', desc: 'Chat with expert AI advisors' },
   { label: 'Investor Tools', path: '/investor-tools', desc: 'Pitch deck, summaries & readiness' },
-  { label: 'Marketing Hub', path: '/marketing-hub', desc: 'Brand assets & launch content' },
-  { label: 'Development Hub', path: '/development-hub', desc: 'Schemas, APIs & deployment' },
-  { label: 'Growth Hub', path: '/growth-hub', desc: 'KPIs, acquisition & growth plans' },
+  { label: 'Marketing', path: '/marketing-hub', desc: 'Brand assets & launch content' },
+  { label: 'Development', path: '/development-hub', desc: 'Schemas, APIs & deployment' },
+  { label: 'Growth', path: '/growth-hub', desc: 'KPIs, acquisition & growth plans' },
   { label: 'Financial Planning', path: '/financial-plan', desc: 'Budget, burn & projections' },
-  { label: 'Launch Hub', path: '/launch-hub', desc: 'Checklists & customer strategy' },
+  { label: 'Launch', path: '/launch-hub', desc: 'Checklists & customer strategy' },
 ];
 
 const STRATEGIES = [
@@ -103,7 +103,14 @@ function AvatarMenu({ user, onLogout }) {
       {open && (
         <div className="absolute top-full right-0 mt-2 w-52 bg-white border-2 border-[#0A0A0A] shadow-[4px_4px_0px_#0A0A0A] animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-3 border-b-2 border-[#0A0A0A]">
-            <div className="text-[13px] font-semibold truncate">{user?.name || 'User'}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-[13px] font-semibold truncate">{user?.name || 'User'}</div>
+              {user?.plan && user.plan !== 'free' && (
+                <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-[#0A0A0A] text-[#F5F3EE] flex-shrink-0">
+                  {user.plan}
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-[#8A8A8A] truncate">{user?.email || ''}</div>
           </div>
           <div className="py-1">
@@ -202,7 +209,7 @@ export function AppNav() {
             {navLink('Dashboard', '/dashboard')}
             {navLink('Pricing', '/pricing')}
             <DropdownMenu
-              label="Features"
+              label="Tools"
               items={FEATURES}
               isOpen={openDropdown === 'features'}
               onToggle={() => setOpenDropdown(openDropdown === 'features' ? null : 'features')}
@@ -258,7 +265,7 @@ export function AppNav() {
                 <MobileLink to="/dashboard" label="Dashboard" onClick={() => setMobileOpen(false)} />
                 <MobileLink to="/pricing" label="Pricing" sub="Plans for every stage" onClick={() => setMobileOpen(false)} />
                 <div className="pt-3 pb-1">
-                  <div className="px-4 text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Features</div>
+                  <div className="px-4 text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Tools</div>
                 </div>
                 {FEATURES.map(f => <MobileLink key={f.path} to={f.path} label={f.label} sub={f.desc} onClick={() => setMobileOpen(false)} />)}
                 <div className="pt-3 pb-1">
@@ -274,7 +281,12 @@ export function AppNav() {
                     <>
                       <div className="flex items-center gap-3 px-3 py-2 bg-[#E8E6E1] border-2 border-[#0A0A0A]">
                         <div className="h-7 w-7 bg-[#0A0A0A] text-[#F5F3EE] flex items-center justify-center text-[11px] font-bold">{session.user.name?.charAt(0).toUpperCase() || 'U'}</div>
-                        <div className="text-[13px] font-semibold truncate">{session.user.name || 'User'}</div>
+                        <div className="text-[13px] font-semibold truncate flex-1">{session.user.name || 'User'}</div>
+                        {session.user.plan && session.user.plan !== 'free' && (
+                          <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-[#0A0A0A] text-[#F5F3EE] flex-shrink-0">
+                            {session.user.plan}
+                          </span>
+                        )}
                       </div>
                       <button onClick={handleLogout} className="w-full h-10 border-2 border-red-600 text-red-600 text-[13px] font-bold tracking-wide hover:bg-red-50 transition-colors duration-200">
                         Sign Out

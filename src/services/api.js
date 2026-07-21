@@ -489,10 +489,10 @@ export async function generateFirst100Customers(data) {
   }
 }
 
-export async function saveCustomerStrategy(strategy, ideaContext = {}) {
+export async function saveCustomerStrategy(strategy, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/first-100-customers/save', { strategy, idea_context: ideaContext });
+    const { data } = await api.post('/api/startups/first-100-customers/save', { strategy, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -529,10 +529,10 @@ export async function generateDecisionEngine(data) {
   }
 }
 
-export async function saveDecisionReport(report, ideaContext = {}) {
+export async function saveDecisionReport(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/decision-engine/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/startups/decision-engine/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -569,10 +569,10 @@ export async function generateBusinessPlan(data) {
   }
 }
 
-export async function saveBusinessPlan(plan, ideaContext = {}) {
+export async function saveBusinessPlan(plan, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/business-plan/save', { plan, idea_context: ideaContext });
+    const { data } = await api.post('/api/startups/business-plan/save', { plan, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -609,10 +609,10 @@ export async function generateCustomerInsights(data) {
   }
 }
 
-export async function saveCustomerInsights(insights, ideaContext = {}) {
+export async function saveCustomerInsights(insights, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/customer-insights/save', { insights, idea_context: ideaContext });
+    const { data } = await api.post('/api/startups/customer-insights/save', { insights, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -649,10 +649,10 @@ export async function generateMarketIntelligence(data) {
   }
 }
 
-export async function saveMarketIntelligence(report, ideaContext = {}) {
+export async function saveMarketIntelligence(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/market-intelligence/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/startups/market-intelligence/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -729,10 +729,10 @@ export async function generateInvestorTools(data) {
   }
 }
 
-export async function saveInvestorTools(report, ideaContext = {}) {
+export async function saveInvestorTools(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/investor-tools/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/investor-tools/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -769,10 +769,10 @@ export async function generateMarketingHub(data) {
   }
 }
 
-export async function saveMarketingHub(report, ideaContext = {}) {
+export async function saveMarketingHub(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/marketing-hub/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/marketing-hub/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -809,10 +809,10 @@ export async function generateDevelopmentHub(data) {
   }
 }
 
-export async function saveDevelopmentHub(report, ideaContext = {}) {
+export async function saveDevelopmentHub(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/development-hub/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/development-hub/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -849,10 +849,10 @@ export async function generateGrowthHub(data) {
   }
 }
 
-export async function saveGrowthHub(report, ideaContext = {}) {
+export async function saveGrowthHub(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/growth-hub/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/growth-hub/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -889,10 +889,10 @@ export async function generateFinancialPlan(data) {
   }
 }
 
-export async function saveFinancialPlan(report, ideaContext = {}) {
+export async function saveFinancialPlan(report, ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/financial-plan/save', { report, idea_context: ideaContext });
+    const { data } = await api.post('/api/financial-plan/save', { report, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -979,10 +979,10 @@ export async function generateLaunchHub(data) {
   }
 }
 
-export async function saveLaunchHub(report, checkedItems = [], ideaContext = {}) {
+export async function saveLaunchHub(report, checkedItems = [], ideaContext = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/launch-hub/save', { report, checked_items: checkedItems, idea_context: ideaContext });
+    const { data } = await api.post('/api/launch-hub/save', { report, checked_items: checkedItems, idea_context: ideaContext, idea_id: ideaId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));

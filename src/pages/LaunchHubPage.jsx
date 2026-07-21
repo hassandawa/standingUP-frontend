@@ -95,7 +95,7 @@ export default function LaunchHubPage() {
       const allIds = getAllItemIds();
       const checkedIds = allIds.filter(id => checkedItems[id]);
       const ideaContext = { startup_name: selectedIdea.startup_name, pitch: selectedIdea.pitch, industry: profile?.preferred_industry || '' };
-      const res = await saveLaunchHub(result, checkedIds, ideaContext);
+      const res = await saveLaunchHub(result, checkedIds, ideaContext, savedIdea?._id);
       setSavedReportId(res.report_id);
       setNotice(res.message || 'Saved.');
     } catch (requestError) { setError(requestError.message); }
@@ -131,7 +131,7 @@ export default function LaunchHubPage() {
       <main className="pt-[104px] pb-24 px-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-[#0A0A0A]">Launch Hub</h1>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-[#0A0A0A]">Launch</h1>
             <p className="text-sm text-[#6A6A6A] mt-1">Product Hunt, App Store, beta launch & first 100 customers for {selectedIdea?.startup_name || 'your startup'}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -163,7 +163,7 @@ export default function LaunchHubPage() {
         {loading && (
           <div className="p-12 border-2 border-[#0A0A0A] text-center animate-pulse">
             <Rocket className="h-8 w-8 mx-auto mb-4 text-[#6A6A6A]" />
-            <p className="text-sm font-bold uppercase tracking-widest text-[#6A6A6A]">Generating Launch Hub...</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-[#6A6A6A]">Generating Launch...</p>
           </div>
         )}
 
