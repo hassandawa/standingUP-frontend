@@ -88,7 +88,10 @@ export default function LandingPage() {
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-[-0.03em] leading-[0.95] mb-6">
               Turn Your Skills<br />Into A Startup
             </h1>
-            <p className="text-base md:text-lg font-medium text-[#3A3A3A] max-w-lg mx-auto mb-10 leading-relaxed">
+            <p className="text-base md:text-lg font-medium text-[#3A3A3A] max-w-lg mx-auto mb-3 leading-relaxed">
+              Every successful business begins with a strong foundation. startingUP helps entrepreneurs build that foundation before they invest their time, money, and effort.
+            </p>
+            <p className="text-sm font-medium text-[#6A6A6A] max-w-lg mx-auto mb-10 leading-relaxed">
               Enter your skills. Our AI generates personalized startup ideas, full MVP plans, competitor analysis, and pitch content in seconds.
             </p>
 
