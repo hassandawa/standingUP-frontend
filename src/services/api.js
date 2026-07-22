@@ -1260,3 +1260,53 @@ export async function adminSetUserPlan(userId, plan, days) {
     throw new Error(apiError(error));
   }
 }
+
+export async function inviteTeamMember(teamId, email) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/teams/invite', { team_id: teamId, email });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function getPendingInvites(teamId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.get(`/api/teams/${teamId}/invites`);
+    return data.invites || [];
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function revokeTeamInvite(teamId, inviteId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post(`/api/teams/${teamId}/invites/${inviteId}/revoke`);
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function acceptTeamInvite(token) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/teams/accept-invite', { token });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function removeTeamMember(teamId, memberUserId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/teams/remove-member', { team_id: teamId, member_user_id: memberUserId });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}

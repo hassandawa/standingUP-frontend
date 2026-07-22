@@ -13,6 +13,7 @@ const FEATURES = [
   { label: 'Growth', path: '/growth-hub', desc: 'KPIs, acquisition & growth plans' },
   { label: 'Financial Planning', path: '/financial-plan', desc: 'Budget, burn & projections' },
   { label: 'Launch', path: '/launch-hub', desc: 'Checklists & customer strategy' },
+  { label: 'Collaboration', path: '/collaboration', desc: 'Team workspace & sharing' },
 ];
 
 const STRATEGIES = [

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
 import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn } from 'lucide-react';
-import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment } from '../services/api.js';
+import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember } from '../services/api.js';
 import { getSession, readValue } from '../services/storage.js';
 import { CopyButton, Badge } from '../components/SharedUI.jsx';
 
@@ -13,6 +13,9 @@ const TABS = [
   { key: 'team', label: 'Team Workspace', icon: Users2 },
   { key: 'comments', label: 'Comments', icon: MessageSquare },
 ];
+
+// Keep in sync with backend TEAM_MEMBER_LIMIT in database_service.py
+const TEAM_MEMBER_LIMIT = 5;
 
 const EXPORT_TYPES = [
   { value: 'analysis', label: 'Idea Analysis' },
@@ -60,6 +63,9 @@ export default function CollaborationHubPage() {
   const [inviteCode, setInviteCode] = useState('');
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamAnalyses, setTeamAnalyses] = useState([]);
+  const [inviteEmail, setInviteEmail] = useState({});
+  const [pendingInvites, setPendingInvites] = useState({});
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Comments
   const [comments, setComments] = useState([]);
@@ -156,6 +162,72 @@ export default function CollaborationHubPage() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }
+
+  async function handleInviteMember(team) {
+    const email = (inviteEmail[team._id] || '').trim();
+    if (!email) { setError('Enter an email to invite.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await inviteTeamMember(team._id, email);
+      setNotice(res.email_sent ? `Invite emailed to ${email}!` : `Invite created for ${email}, but the email could not be sent — share the accept link manually.`);
+      setInviteEmail((prev) => ({ ...prev, [team._id]: '' }));
+      await loadPendingInvites(team);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function loadPendingInvites(team) {
+    try {
+      const invites = await getPendingInvites(team._id);
+      setPendingInvites((prev) => ({ ...prev, [team._id]: invites }));
+    } catch { /* ignore, likely not the owner */ }
+  }
+
+  async function handleRevokeInvite(team, inviteId) {
+    try {
+      await revokeTeamInvite(team._id, inviteId);
+      setNotice('Invite revoked.');
+      await loadPendingInvites(team);
+    } catch (e) { setError(e.message); }
+  }
+
+  async function handleRemoveMember(team, memberUserId) {
+    if (!window.confirm('Remove this member from the team?')) return;
+    setLoading(true);
+    setError('');
+    try {
+      await removeTeamMember(team._id, memberUserId);
+      setNotice('Member removed.');
+      await loadTeams();
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => {
+    const token = searchParams.get('accept_invite');
+    if (!token) return;
+    if (!session?.token) {
+      setError('Sign in or create an account first, then reopen this invite link to join the team.');
+      return;
+    }
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await acceptTeamInvite(token);
+        setNotice(`You've joined "${res.team_name}"!`);
+        setActiveTab('team');
+        await loadTeams();
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+        searchParams.delete('accept_invite');
+        setSearchParams(searchParams, { replace: true });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, session?.token]);
 
   async function loadTeamAnalyses(team) {
     setSelectedTeam(team);
@@ -332,36 +404,99 @@ export default function CollaborationHubPage() {
                     <p className="text-xs text-[#6A6A6A]">No teams yet. Create or join one above.</p>
                   ) : (
                     <div className="grid gap-3">
-                      {teams.map(team => (
-                        <div key={team._id} className="border border-[#0A0A0A] p-4 hover:bg-[#F5F3EE] cursor-pointer" onClick={() => loadTeamAnalyses(team)}>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-sm font-bold">{team.name}</h3>
-                              {team.description && <p className="text-[10px] text-[#6A6A6A]">{team.description}</p>}
-                            </div>
-                            <div className="text-right text-[10px] text-[#6A6A6A]">
-                              <div>{team.members?.length || 0} members</div>
-                              <Badge label={`Code: ${team.invite_code}`} color="bg-[#E8E6E1] text-[#0A0A0A]" />
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {(team.members || []).map((m, i) => <Badge key={i} label={`${m.name || m.email} (${m.role})`} color={m.role === 'owner' ? 'bg-[#0A0A0A] text-white' : 'bg-[#E8E6E1] text-[#0A0A0A]'} />)}
-                          </div>
-                          {selectedTeam?._id === team._id && teamAnalyses.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-[#0A0A0A]/20">
-                              <span className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A]">Shared Analyses:</span>
-                              <div className="mt-1 space-y-1">
-                                {teamAnalyses.map(a => (
-                                  <div key={a._id} className="text-xs flex items-center gap-2">
-                                    <span className="font-bold">{a.title}</span>
-                                    <Badge label={a.report_type} color="bg-[#E8E6E1] text-[#0A0A0A]" />
-                                  </div>
-                                ))}
+                      {teams.map(team => {
+                        const isOwner = team.owner_id === session?.user?.id;
+                        const memberCount = team.members?.length || 0;
+                        return (
+                          <div key={team._id} className="border border-[#0A0A0A] p-4">
+                            <div className="flex items-center justify-between cursor-pointer" onClick={() => { loadTeamAnalyses(team); if (isOwner) loadPendingInvites(team); }}>
+                              <div>
+                                <h3 className="text-sm font-bold">{team.name}</h3>
+                                {team.description && <p className="text-[10px] text-[#6A6A6A]">{team.description}</p>}
                               </div>
+                              <div className="text-right text-[10px] text-[#6A6A6A]">
+                                <div>{memberCount}/{TEAM_MEMBER_LIMIT} members</div>
+                                <Badge label={`Code: ${team.invite_code}`} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {(team.members || []).map((m, i) => (
+                                <span key={i} className="inline-flex items-center gap-1">
+                                  <Badge label={`${m.name || m.email} (${m.role})`} color={m.role === 'owner' ? 'bg-[#0A0A0A] text-white' : 'bg-[#E8E6E1] text-[#0A0A0A]'} />
+                                  {isOwner && m.role !== 'owner' && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleRemoveMember(team, m.user_id); }}
+                                      title="Remove member"
+                                      className="text-[10px] font-black text-red-600 hover:text-red-800 -ml-1"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+
+                            {isOwner && (
+                              <div className="mt-3 pt-3 border-t border-[#0A0A0A]/20" onClick={(e) => e.stopPropagation()}>
+                                {memberCount >= TEAM_MEMBER_LIMIT ? (
+                                  <p className="text-[10px] font-bold text-[#6A6A6A]">Member limit reached ({TEAM_MEMBER_LIMIT}). Remove someone to invite another.</p>
+                                ) : (
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="email"
+                                      value={inviteEmail[team._id] || ''}
+                                      onChange={(e) => setInviteEmail((prev) => ({ ...prev, [team._id]: e.target.value }))}
+                                      placeholder="teammate@email.com"
+                                      className="flex-1 h-9 px-3 border-2 border-[#0A0A0A] bg-white text-xs outline-none"
+                                    />
+                                    <button
+                                      onClick={() => handleInviteMember(team)}
+                                      disabled={loading}
+                                      className="h-9 px-3 bg-[#0A0A0A] text-[#F5F3EE] text-[10px] font-black uppercase tracking-widest border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40 flex items-center gap-1"
+                                    >
+                                      <Send className="h-3 w-3" /> Invite
+                                    </button>
+                                  </div>
+                                )}
+
+                                {(pendingInvites[team._id] || []).length > 0 && (
+                                  <div className="mt-3">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A]">Pending Invites:</span>
+                                    <div className="mt-1 space-y-1">
+                                      {pendingInvites[team._id].map((inv) => (
+                                        <div key={inv._id} className="text-xs flex items-center justify-between">
+                                          <span>{inv.email}</span>
+                                          <button
+                                            onClick={() => handleRevokeInvite(team, inv._id)}
+                                            className="text-[10px] font-bold text-red-600 hover:text-red-800 uppercase tracking-wide"
+                                          >
+                                            Revoke
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {selectedTeam?._id === team._id && teamAnalyses.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-[#0A0A0A]/20">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A]">Shared Analyses:</span>
+                                <div className="mt-1 space-y-1">
+                                  {teamAnalyses.map(a => (
+                                    <div key={a._id} className="text-xs flex items-center gap-2">
+                                      <span className="font-bold">{a.title}</span>
+                                      <Badge label={a.report_type} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                                    </div>
+                                  ))}
+                                </div>
                             </div>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
