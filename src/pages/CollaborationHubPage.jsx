@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
 import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn } from 'lucide-react';
-import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember } from '../services/api.js';
+import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, getIdeaAnalysisForIdea } from '../services/api.js';
 import { useIdea } from '../contexts/IdeaContext.jsx';
 import IdeaSelector from '../components/IdeaSelector.jsx';
 import { getSession, readValue } from '../services/storage.js';
@@ -51,15 +51,30 @@ export default function CollaborationHubPage() {
   const localIdea = readValue('selectedIdea');
   const localAnalysis = readValue('ideaAnalysis');
   const { selectedIdea: savedIdea } = useIdea();
-  // Prefer the currently-selected SAVED idea (from the database) so this
-  // page works for any of the user's saved ideas, not just whichever one
-  // was most recently generated in this browser session.
   const selectedIdea = savedIdea?.idea_data || localIdea;
-  const analysis = savedIdea?.analysis || localAnalysis;
+  const [fetchedIdeaAnalysis, setFetchedIdeaAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  useEffect(() => {
+    if (savedIdea?._id) {
+      setAnalysisLoading(true);
+      getIdeaAnalysisForIdea(savedIdea._id)
+        .then((data) => setFetchedIdeaAnalysis(data.analysis || null))
+        .catch(() => setFetchedIdeaAnalysis(null))
+        .finally(() => setAnalysisLoading(false));
+    } else {
+      setFetchedIdeaAnalysis(null);
+    }
+  }, [savedIdea?._id]);
+
+  // Prefer the idea-specific analysis (problem/target users/scores/pitch)
+  // fetched from the backend for the currently selected saved idea; fall
+  // back to whatever's in local browser storage from the last "Analyze My
+  // Idea" run in this session if no saved idea is selected.
+  const analysis = fetchedIdeaAnalysis || localAnalysis;
 
   // Share
   const [shareUrl, setShareUrl] = useState('');
-  const [shareTeamId, setShareTeamId] = useState('');
 
   // Export
   const [exportType, setExportType] = useState('analysis');
@@ -84,18 +99,12 @@ export default function CollaborationHubPage() {
 
   const session = getSession();
 
-  // An idea can be saved without ever going through Idea Analysis (e.g. from
-  // the founder-profile idea generator), which leaves `analysis` as `{}` —
-  // truthy, but empty. Check for a field that only a real idea analysis has.
-  const hasFullAnalysis = !!analysis?.refined_idea;
-
   async function handleShare() {
-    if (!hasFullAnalysis) { setError('This idea doesn\'t have a full idea analysis yet. Run it through Idea Analysis first, then share.'); return; }
-    if (!shareTeamId) { setError('Choose which team to share this with first.'); return; }
+    if (!analysis) { setError('No analysis to share. Generate an idea analysis first.'); return; }
     setLoading(true);
     setError('');
     try {
-      const res = await shareAnalysis(analysis, {}, shareTeamId);
+      const res = await shareAnalysis(analysis, {});
       setShareUrl(res.url);
       setNotice('Share link created!');
     } catch (e) { setError(e.message); }
@@ -104,7 +113,7 @@ export default function CollaborationHubPage() {
 
   function loadExportData() {
     const dataMap = {
-      analysis: readValue('ideaAnalysis') || savedIdea?.analysis || null,
+      analysis: analysis || null,
       business_plan: readValue('businessPlan'),
       customer_insights: readValue('customerInsights'),
       market_intelligence: readValue('marketIntelligence'),
@@ -279,9 +288,6 @@ export default function CollaborationHubPage() {
 
   useEffect(() => { if (session?.token) loadTeams(); }, []);
   useEffect(() => { loadComments(); }, [commentTargetType, commentTargetId]);
-  useEffect(() => {
-    if (!shareTeamId && teams.length === 1) setShareTeamId(teams[0].id);
-  }, [teams, shareTeamId]);
 
   return (
     <div className="min-h-screen bg-[#F5F3EE]">
@@ -314,24 +320,8 @@ export default function CollaborationHubPage() {
           <div className="space-y-6 max-w-2xl">
             <div className="border-2 border-[#0A0A0A] bg-white p-6">
               <h2 className="text-sm font-black uppercase tracking-widest mb-4">Share Your Analysis</h2>
-              <p className="text-xs text-[#6A6A6A] mb-4">Generate a shareable link to your startup's idea analysis. Only members of the team you choose below can open it — they'll need to sign in first.</p>
-
-              {teams.length === 0 ? (
-                <p className="text-xs font-bold text-yellow-800 mb-4">You need a team before you can share. Create or join one in the Team Workspace tab first.</p>
-              ) : (
-                <div className="mb-4">
-                  <label className="block text-[9px] font-black uppercase tracking-[0.15em] text-[#3A3A3A] mb-2">Share with team</label>
-                  <select value={shareTeamId} onChange={(e) => setShareTeamId(e.target.value)}
-                    className="w-full h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs font-bold uppercase tracking-wide outline-none">
-                    <option value="">Select a team...</option>
-                    {teams.map((team) => (
-                      <option key={team.id} value={team.id}>{team.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <button onClick={handleShare} disabled={loading || !hasFullAnalysis || !shareTeamId} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
+              <p className="text-xs text-[#6A6A6A] mb-4">Generate a shareable link to your startup's idea analysis. Anyone with the link can view the results.</p>
+              <button onClick={handleShare} disabled={loading || !analysis} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
                 <LinkIcon className="h-4 w-4" /> {loading ? 'Creating...' : 'Generate Share Link'}
               </button>
               {shareUrl && (
@@ -346,9 +336,18 @@ export default function CollaborationHubPage() {
                 </div>
               )}
             </div>
-            {!hasFullAnalysis && (
+            {analysisLoading && (
+              <div className="p-4 border-2 border-[#0A0A0A] bg-white">
+                <p className="text-xs font-bold text-[#6A6A6A]">Loading analysis for this idea…</p>
+              </div>
+            )}
+            {!analysisLoading && !analysis && (
               <div className="p-4 border-2 border-[#0A0A0A] bg-yellow-50">
-                <p className="text-xs font-bold text-yellow-800">No full idea analysis found for this idea. Go to <Link to="/analyze-idea" className="underline">Idea Analysis</Link> first.</p>
+                <p className="text-xs font-bold text-yellow-800">
+                  {savedIdea
+                    ? <>No analysis yet for "{savedIdea.title || 'this idea'}". Run <Link to="/analyze-idea" className="underline">Idea Analysis</Link> on it first, then come back here.</>
+                    : <>Select a saved idea above, or run <Link to="/analyze-idea" className="underline">Idea Analysis</Link> first.</>}
+                </p>
               </div>
             )}
           </div>

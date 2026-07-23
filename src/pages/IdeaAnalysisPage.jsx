@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, RefreshCw, Users, Target, Shield, TrendingUp, Lightbulb, Code, DollarSign, AlertTriangle, BarChart3, UserCheck, FileText, Share2, Send, MessageCircle, Copy, CheckCheck, Mic, Square, Mail, Shuffle } from 'lucide-react';
 import { AppNav } from '../components/PageShell.jsx';
+import { useIdea } from '../contexts/IdeaContext.jsx';
 import { readValue, saveValue } from '../services/storage.js';
 import { analyzeIdea, analyzeIdeaStream, chatAboutIdeaStream, shareAnalysis, estimateMarketSize, runDebate, sendEmailReport, saveBuildProgress, loadBuildProgress, saveAnalysisProgress, createSavedIdea } from '../services/api.js';
 
@@ -500,6 +501,7 @@ function ChatPanel({ analysis }) {
 
 export default function IdeaAnalysisPage() {
   const navigate = useNavigate();
+  const { selectedIdea: savedIdea } = useIdea();
   const cached = readValue('ideaAnalysis');
   const ideaForm = readValue('ideaForm');
   const [result, setResult] = useState(cached);
@@ -523,7 +525,7 @@ export default function IdeaAnalysisPage() {
     setSavingProgress(true);
     setProgressSaved(false);
     try {
-      await saveAnalysisProgress(result, ideaForm || {});
+      await saveAnalysisProgress(result, ideaForm || {}, savedIdea?._id || null);
       setProgressSaved(true);
       setTimeout(() => setProgressSaved(false), 4000);
     } catch (err) {

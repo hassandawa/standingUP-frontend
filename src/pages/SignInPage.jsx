@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { signInAccount } from '../services/api.js';
 import { setSession } from '../services/storage.js';
 
 export default function SignInPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,8 +21,7 @@ export default function SignInPage() {
     try {
       const auth = await signInAccount(form);
       setSession(auth);
-      const redirect = searchParams.get('redirect');
-      navigate(redirect && redirect.startsWith('/') ? redirect : '/dashboard');
+      navigate('/dashboard');
     } catch (requestError) {
       setError(requestError.message);
     } finally {

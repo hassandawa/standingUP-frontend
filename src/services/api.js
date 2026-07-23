@@ -359,10 +359,10 @@ export async function chatAboutIdeaStream(analysis, question, onToken, onDone, o
   }
 }
 
-export async function shareAnalysis(analysis, ideaForm = {}, teamId) {
+export async function shareAnalysis(analysis, ideaForm = {}) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/analyze-idea/share', { analysis, idea_form: ideaForm, team_id: teamId });
+    const { data } = await api.post('/api/startups/analyze-idea/share', { analysis, idea_form: ideaForm });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -375,9 +375,7 @@ export async function getSharedAnalysis(token) {
     const { data } = await api.get(`/api/share/${token}`);
     return data;
   } catch (error) {
-    const wrapped = new Error(apiError(error));
-    wrapped.status = error.response?.status;
-    throw wrapped;
+    throw new Error(apiError(error));
   }
 }
 
@@ -421,10 +419,20 @@ export async function sendEmailReport(analysis, recipientEmail, ideaForm = {}) {
   }
 }
 
-export async function saveAnalysisProgress(analysis, ideaForm = {}) {
+export async function saveAnalysisProgress(analysis, ideaForm = {}, ideaId = null) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/analyze-idea/save', { analysis, idea_form: ideaForm });
+    const { data } = await api.post('/api/startups/analyze-idea/save', { analysis, idea_form: ideaForm, idea_id: ideaId });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function getIdeaAnalysisForIdea(ideaId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.get(`/api/startups/analyze-idea/by-idea/${ideaId}`);
     return data;
   } catch (error) {
     throw new Error(apiError(error));
