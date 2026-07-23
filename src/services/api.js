@@ -359,10 +359,10 @@ export async function chatAboutIdeaStream(analysis, question, onToken, onDone, o
   }
 }
 
-export async function shareAnalysis(analysis, ideaForm = {}) {
+export async function shareAnalysis(analysis, ideaForm = {}, teamId) {
   try {
     assertApiConfigured();
-    const { data } = await api.post('/api/startups/analyze-idea/share', { analysis, idea_form: ideaForm });
+    const { data } = await api.post('/api/startups/analyze-idea/share', { analysis, idea_form: ideaForm, team_id: teamId });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -375,7 +375,9 @@ export async function getSharedAnalysis(token) {
     const { data } = await api.get(`/api/share/${token}`);
     return data;
   } catch (error) {
-    throw new Error(apiError(error));
+    const wrapped = new Error(apiError(error));
+    wrapped.status = error.response?.status;
+    throw wrapped;
   }
 }
 

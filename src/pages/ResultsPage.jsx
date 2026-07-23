@@ -170,7 +170,14 @@ export default function ResultsPage() {
         title: selectedIdea.startup_name || 'Untitled Idea',
         description: selectedIdea.pitch || '',
         idea_data: selectedIdea,
-        analysis: analysis || {},
+        // NOTE: `analysis` here is the founder-profile analysis (founder_type,
+        // strengths, weaknesses...), not an idea analysis (refined_idea,
+        // scores, pitch_summary...). Other pages (CollaborationHub, AI
+        // Cofounder, SharedView) read saved-idea `analysis` expecting the
+        // idea-analysis shape, so we deliberately don't save the founder
+        // profile under this key — that previously produced saved ideas
+        // with a mismatched/empty analysis and broken share links.
+        analysis: {},
         plan: plan || {},
         profile: profile || {},
       });
