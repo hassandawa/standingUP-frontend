@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
 import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn } from 'lucide-react';
 import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember } from '../services/api.js';
+import { useIdea } from '../contexts/IdeaContext.jsx';
+import IdeaSelector from '../components/IdeaSelector.jsx';
 import { getSession, readValue } from '../services/storage.js';
 import { CopyButton, Badge } from '../components/SharedUI.jsx';
 
@@ -46,8 +48,14 @@ export default function CollaborationHubPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const profile = readValue('profile');
-  const selectedIdea = readValue('selectedIdea');
-  const analysis = readValue('ideaAnalysis');
+  const localIdea = readValue('selectedIdea');
+  const localAnalysis = readValue('ideaAnalysis');
+  const { selectedIdea: savedIdea } = useIdea();
+  // Prefer the currently-selected SAVED idea (from the database) so this
+  // page works for any of the user's saved ideas, not just whichever one
+  // was most recently generated in this browser session.
+  const selectedIdea = savedIdea?.idea_data || localIdea;
+  const analysis = savedIdea?.analysis || localAnalysis;
 
   // Share
   const [shareUrl, setShareUrl] = useState('');
@@ -89,7 +97,7 @@ export default function CollaborationHubPage() {
 
   function loadExportData() {
     const dataMap = {
-      analysis: readValue('ideaAnalysis'),
+      analysis: readValue('ideaAnalysis') || savedIdea?.analysis || null,
       business_plan: readValue('businessPlan'),
       customer_insights: readValue('customerInsights'),
       market_intelligence: readValue('marketIntelligence'),
@@ -271,10 +279,12 @@ export default function CollaborationHubPage() {
       <main className="pt-[104px] pb-24 px-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-[#0A0A0A]">Collaboration Hub</h1>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-[#0A0A0A]">Collaboration</h1>
             <p className="text-sm text-[#6A6A6A] mt-1">Share, export, team workspace & comments</p>
           </div>
         </div>
+
+        {(activeTab === 'share' || activeTab === 'pdf' || activeTab === 'notion') && <IdeaSelector />}
 
         {error && <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 text-red-700 text-xs font-bold uppercase">{error}</div>}
         {notice && <div className="mb-6 p-4 bg-green-50 border-2 border-green-600 text-green-800 text-xs font-bold uppercase">{notice}</div>}
