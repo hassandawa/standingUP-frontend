@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
 import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn } from 'lucide-react';
-import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, getIdeaAnalysisForIdea } from '../services/api.js';
+import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, deleteTeam, getReportForIdea } from '../services/api.js';
 import { useIdea } from '../contexts/IdeaContext.jsx';
 import IdeaSelector from '../components/IdeaSelector.jsx';
 import { getSession, readValue } from '../services/storage.js';
@@ -21,6 +21,8 @@ const TEAM_MEMBER_LIMIT = 5;
 
 const EXPORT_TYPES = [
   { value: 'analysis', label: 'Idea Analysis' },
+  { value: 'customer_strategy', label: 'First 100 Customers' },
+  { value: 'decision_report', label: 'Decision Engine' },
   { value: 'business_plan', label: 'Business Plan' },
   { value: 'customer_insights', label: 'Customer Insights' },
   { value: 'market_intelligence', label: 'Market Intelligence' },
@@ -52,26 +54,27 @@ export default function CollaborationHubPage() {
   const localAnalysis = readValue('ideaAnalysis');
   const { selectedIdea: savedIdea } = useIdea();
   const selectedIdea = savedIdea?.idea_data || localIdea;
-  const [fetchedIdeaAnalysis, setFetchedIdeaAnalysis] = useState(null);
+  const [shareReportType, setShareReportType] = useState('analysis');
+  const [fetchedReport, setFetchedReport] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
   useEffect(() => {
     if (savedIdea?._id) {
       setAnalysisLoading(true);
-      getIdeaAnalysisForIdea(savedIdea._id)
-        .then((data) => setFetchedIdeaAnalysis(data.analysis || null))
-        .catch(() => setFetchedIdeaAnalysis(null))
+      getReportForIdea(shareReportType, savedIdea._id)
+        .then((data) => setFetchedReport(data.content || null))
+        .catch(() => setFetchedReport(null))
         .finally(() => setAnalysisLoading(false));
     } else {
-      setFetchedIdeaAnalysis(null);
+      setFetchedReport(null);
     }
-  }, [savedIdea?._id]);
+  }, [savedIdea?._id, shareReportType]);
 
-  // Prefer the idea-specific analysis (problem/target users/scores/pitch)
-  // fetched from the backend for the currently selected saved idea; fall
-  // back to whatever's in local browser storage from the last "Analyze My
-  // Idea" run in this session if no saved idea is selected.
-  const analysis = fetchedIdeaAnalysis || localAnalysis;
+  // Prefer the report fetched from the backend for the currently selected
+  // saved idea + chosen report type; fall back to whatever's in local
+  // browser storage from the last "Analyze My Idea" run in this session
+  // if no saved idea is selected (only applies to the analysis type).
+  const analysis = fetchedReport || (shareReportType === 'analysis' ? localAnalysis : null);
 
   // Share
   const [shareUrl, setShareUrl] = useState('');
