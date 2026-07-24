@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, RefreshCw, Users, Target, Shield, TrendingUp, Lightbulb, Code, DollarSign, AlertTriangle, BarChart3, UserCheck, FileText, Share2, Send, MessageCircle, Copy, CheckCheck, Mic, Square, Mail, Shuffle } from 'lucide-react';
 import { AppNav } from '../components/PageShell.jsx';
 import { useIdea } from '../contexts/IdeaContext.jsx';
+import IdeaSelector from '../components/IdeaSelector.jsx';
 import { readValue, saveValue } from '../services/storage.js';
 import { analyzeIdea, analyzeIdeaStream, chatAboutIdeaStream, shareAnalysis, estimateMarketSize, runDebate, sendEmailReport, saveBuildProgress, loadBuildProgress, saveAnalysisProgress, createSavedIdea } from '../services/api.js';
 
@@ -639,6 +640,12 @@ export default function IdeaAnalysisPage() {
       <AppNav />
       <section className="pt-32 pb-16 px-6">
         <div className="max-w-7xl mx-auto">
+          <IdeaSelector />
+          {savedIdea && (
+            <p className="text-xs font-bold text-[#6A6A6A] mb-6 -mt-4">
+              This analysis will be linked to "<strong>{savedIdea.title}</strong>" — save progress below to attach it.
+            </p>
+          )}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
             <div>
               <p className="section-label mb-4">Idea Analysis</p>
