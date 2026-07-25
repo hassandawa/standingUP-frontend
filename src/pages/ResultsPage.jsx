@@ -201,12 +201,20 @@ export default function ResultsPage() {
       // The Share tab needs the real idea-analysis shape (refined_idea,
       // market_demand_score, etc.), not the profile-level `analysis` above -
       // generate it now if it hasn't been already.
-      const analysisForSave = ideaAnalysis || (await handleGenerateAnalysis());
+      let analysisForSave = ideaAnalysis;
+      if (!analysisForSave) {
+        analysisForSave = await handleGenerateAnalysis();
+        if (!analysisForSave) {
+          // handleGenerateAnalysis already set a specific error message -
+          // don't proceed and don't let a save-success notice bury it.
+          return;
+        }
+      }
       await createSavedIdea({
         title: selectedIdea.startup_name || 'Untitled Idea',
         description: selectedIdea.pitch || '',
         idea_data: selectedIdea,
-        analysis: analysisForSave || {},
+        analysis: analysisForSave,
         plan: plan || {},
         profile: profile || {},
       });
