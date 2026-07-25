@@ -254,6 +254,19 @@ export default function CollaborationHubPage() {
     finally { setLoading(false); }
   }
 
+  async function handleDeleteTeam(team) {
+    if (!window.confirm(`Delete "${team.name}"? This removes the team and its shared workspace for everyone. This can't be undone.`)) return;
+    setLoading(true);
+    setError('');
+    try {
+      await deleteTeam(team._id);
+      setNotice('Team deleted.');
+      if (selectedTeam?._id === team._id) { setSelectedTeam(null); setTeamAnalyses([]); }
+      await loadTeams();
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
   useEffect(() => {
     const token = searchParams.get('accept_invite');
     if (!token) return;
@@ -477,9 +490,20 @@ export default function CollaborationHubPage() {
                                 <h3 className="text-sm font-bold">{team.name}</h3>
                                 {team.description && <p className="text-[10px] text-[#6A6A6A]">{team.description}</p>}
                               </div>
-                              <div className="text-right text-[10px] text-[#6A6A6A]">
-                                <div>{memberCount}/{TEAM_MEMBER_LIMIT} members</div>
-                                <Badge label={`Code: ${team.invite_code}`} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                              <div className="flex items-start gap-3">
+                                <div className="text-right text-[10px] text-[#6A6A6A]">
+                                  <div>{memberCount}/{TEAM_MEMBER_LIMIT} members</div>
+                                  <Badge label={`Code: ${team.invite_code}`} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                                </div>
+                                {isOwner && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteTeam(team); }}
+                                    title="Delete team"
+                                    className="h-7 w-7 flex items-center justify-center border-2 border-[#0A0A0A] text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors shrink-0"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </div>
 

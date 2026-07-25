@@ -1338,3 +1338,13 @@ export async function removeTeamMember(teamId, memberUserId) {
     throw new Error(apiError(error));
   }
 }
+
+export async function deleteTeam(teamId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.delete(`/api/teams/${teamId}`);
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}

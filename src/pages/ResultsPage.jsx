@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Brain, Check, Download, Rocket, Save, Sparkles, Users, Lightbulb } from 'lucide-react';
+import { ArrowRight, Brain, Check, Rocket, Save, Sparkles, Users, Lightbulb } from 'lucide-react';
 import { AppNav } from '../components/PageShell.jsx';
 import { generateIdeas, generatePlan, savePlan, createSavedIdea, analyzeIdea } from '../services/api.js';
 import { getSession, readValue, saveValue } from '../services/storage.js';
@@ -75,35 +75,6 @@ export default function ResultsPage() {
     if (!ideas.length) return 0;
     return ideas.reduce((sum, idea) => sum + Number(idea.opportunity_score || 0), 0) / ideas.length;
   }, [ideas]);
-
-  const planText = useMemo(() => (plan ? JSON.stringify(plan, null, 2) : ''), [plan]);
-  const markdownText = useMemo(() => {
-    if (!plan) return '';
-    const lines = [
-      `# ${plan.startup_name}`,
-      '',
-      `**Pitch:** ${plan.pitch}`,
-      '',
-      '## Problem',
-      plan.problem,
-      '',
-      '## Solution',
-      plan.solution,
-      '',
-      '## MVP Features',
-      ...(plan.mvp_features || []).map((item) => `- ${item}`),
-      '',
-      '## Roadmap',
-      ...(plan.roadmap || []).map((item) => `- Week ${item.week}: ${item.title} - ${(item.tasks || []).join(', ')}`),
-      '',
-      '## Revenue Model',
-      JSON.stringify(plan.revenue_model || {}, null, 2),
-      '',
-      '## Risks',
-      ...(plan.risks || []).map((item) => `- ${item}`),
-    ];
-    return lines.join('\n');
-  }, [plan]);
 
   if (!profile || !ideas.length) {
     return (
@@ -247,18 +218,6 @@ export default function ResultsPage() {
     }
   }
 
-  function handleDownload(format = 'json') {
-    const content = format === 'md' ? markdownText : planText;
-    if (!content) return;
-    const blob = new Blob([content], { type: format === 'md' ? 'text/markdown' : 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${plan.startup_name || 'startup-plan'}.${format}`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <main className="min-h-screen bg-[#F5F3EE] text-[#0A0A0A]">
       <AppNav />
@@ -378,12 +337,6 @@ export default function ResultsPage() {
                         <button onClick={handleSaveToIdeas} disabled={savingIdea}
                           className="h-10 px-5 bg-[#0A0A0A] text-[#F5F3EE] border-2 border-[#0A0A0A] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white hover:text-[#0A0A0A] active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[4px_4px_0_0_rgba(10,10,10,1)] hover:shadow-none">
                           <Lightbulb className="h-4 w-4" /> {savingIdea ? 'Saving...' : 'Save to Ideas'}
-                        </button>
-                        <button onClick={() => handleDownload('json')} className="h-10 px-4 border-2 border-[#0A0A0A] bg-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#0A0A0A] hover:text-[#F5F3EE] transition-colors">
-                          <Download className="h-4 w-4" /> JSON
-                        </button>
-                        <button onClick={() => handleDownload('md')} className="h-10 px-4 border-2 border-[#0A0A0A] bg-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#0A0A0A] hover:text-[#F5F3EE] transition-colors">
-                          <Download className="h-4 w-4" /> MD
                         </button>
                       </div>
                     </div>
