@@ -44,6 +44,18 @@ function downloadFile(content, filename, mimeType) {
   URL.revokeObjectURL(url);
 }
 
+function UpsellPanel({ title, body, cta }) {
+  return (
+    <div className="max-w-2xl border-2 border-[#0A0A0A] bg-white p-8 text-center">
+      <h2 className="text-sm font-black uppercase tracking-widest mb-2">{title}</h2>
+      <p className="text-xs text-[#6A6A6A] mb-6">{body}</p>
+      <Link to="/pricing" className="inline-block h-10 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest leading-10">
+        {cta}
+      </Link>
+    </div>
+  );
+}
+
 export default function CollaborationHubPage() {
   const [activeTab, setActiveTab] = useState('share');
   const [loading, setLoading] = useState(false);
@@ -118,6 +130,16 @@ export default function CollaborationHubPage() {
   const [commentTargetId, setCommentTargetId] = useState('main');
 
   const session = getSession();
+  const userPlan = session?.user?.plan;
+  const canExport = userPlan === 'pro' || userPlan === 'team';
+  const canUseComments = userPlan === 'team';
+  const canUseTeamWorkspace = userPlan === 'team' || teams.length > 0;
+  const visibleTabs = TABS.filter((tab) => {
+    if (tab.key === 'pdf' || tab.key === 'notion') return canExport;
+    if (tab.key === 'team') return canUseTeamWorkspace;
+    if (tab.key === 'comments') return canUseComments;
+    return true;
+  });
 
   async function handleShare() {
     if (!analysis) { setError('No analysis to share. Generate an idea analysis first.'); return; }
@@ -345,7 +367,7 @@ export default function CollaborationHubPage() {
         {notice && <div className="mb-6 p-4 bg-green-50 border-2 border-green-600 text-green-800 text-xs font-bold uppercase">{notice}</div>}
 
         <div className="flex border-b-2 border-[#0A0A0A] mb-8 overflow-x-auto">
-          {TABS.map(tab => {
+          {visibleTabs.map(tab => {
             const Icon = tab.icon;
             return (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest border-r-2 border-[#0A0A0A] transition-colors ${activeTab === tab.key ? 'bg-[#0A0A0A] text-[#F5F3EE]' : 'text-[#0A0A0A] hover:bg-[#E8E6E1]'}`}>
@@ -392,7 +414,7 @@ export default function CollaborationHubPage() {
           </div>
         )}
 
-        {activeTab === 'pdf' && (
+        {activeTab === 'pdf' && (canExport ? (
           <div className="space-y-6 max-w-2xl">
             <div className="border-2 border-[#0A0A0A] bg-white p-6">
               <h2 className="text-sm font-black uppercase tracking-widest mb-4">Export as PDF</h2>
@@ -411,9 +433,11 @@ export default function CollaborationHubPage() {
               {exportLoading && <p className="mt-3 text-[10px] font-bold text-[#6A6A6A]">Loading report for this idea…</p>}
             </div>
           </div>
-        )}
+        ) : (
+          <UpsellPanel title="Export as PDF" body="Exporting reports requires the Pro or Team plan." cta="Upgrade to Pro" />
+        ))}
 
-        {activeTab === 'notion' && (
+        {activeTab === 'notion' && (canExport ? (
           <div className="space-y-6 max-w-2xl">
             <div className="border-2 border-[#0A0A0A] bg-white p-6">
               <h2 className="text-sm font-black uppercase tracking-widest mb-4">Export to Notion</h2>
@@ -432,7 +456,9 @@ export default function CollaborationHubPage() {
               {exportLoading && <p className="mt-3 text-[10px] font-bold text-[#6A6A6A]">Loading report for this idea…</p>}
             </div>
           </div>
-        )}
+        ) : (
+          <UpsellPanel title="Export to Notion" body="Exporting reports requires the Pro or Team plan." cta="Upgrade to Pro" />
+        ))}
 
         {activeTab === 'team' && (
           <div className="space-y-6">
@@ -592,7 +618,7 @@ export default function CollaborationHubPage() {
           </div>
         )}
 
-        {activeTab === 'comments' && (
+        {activeTab === 'comments' && (canUseComments ? (
           <div className="space-y-6 max-w-3xl">
             {!session?.token ? (
               <div className="p-8 border-2 border-[#0A0A0A] text-center">
@@ -645,7 +671,9 @@ export default function CollaborationHubPage() {
               </>
             )}
           </div>
-        )}
+        ) : (
+          <UpsellPanel title="Comments" body="Commenting is a Team plan feature for collaborating with your teammates." cta="Upgrade to Team" />
+        ))}
       </main>
     </div>
   );
