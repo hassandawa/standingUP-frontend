@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Brain, Check, Download, Rocket, Save, Sparkles, Users, Lightbulb } from 'lucide-react';
 import { AppNav } from '../components/PageShell.jsx';
-import { generateIdeas, generatePlan, savePlan, createSavedIdea } from '../services/api.js';
+import { generateIdeas, generatePlan, savePlan, createSavedIdea, analyzeIdea } from '../services/api.js';
 import { getSession, readValue, saveValue } from '../services/storage.js';
 
 function Score({ label, value }) {
@@ -66,6 +66,8 @@ export default function ResultsPage() {
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [savingIdea, setSavingIdea] = useState(false);
+  const [ideaAnalysis, setIdeaAnalysis] = useState(null);
+  const [analyzingIdea, setAnalyzingIdea] = useState(false);
   const topIdea = useMemo(() => {
     return [...ideas].sort((a, b) => Number(b.opportunity_score || 0) - Number(a.opportunity_score || 0))[0];
   }, [ideas]);
@@ -137,6 +139,36 @@ export default function ResultsPage() {
     }
   }
 
+  async function handleGenerateAnalysis() {
+    if (!plan || !selectedIdea) return null;
+    setError('');
+    setAnalyzingIdea(true);
+    try {
+      // Derived entirely from data already generated on this page - no manual
+      // re-entry needed. Mirrors the fields the manual /input "idea" mode form
+      // collects (IdeaAnalysisRequest: startup_idea, target_audience, industry,
+      // skills, budget_time_limit).
+      const derivedIdeaForm = {
+        startup_idea: [plan.pitch, plan.problem, plan.solution].filter(Boolean).join(' ') || selectedIdea.pitch || selectedIdea.startup_name || '',
+        target_audience: (plan.target_users?.length ? plan.target_users : selectedIdea.target_users || []).join(', '),
+        industry: profile?.preferred_industry || '',
+        skills: (profile?.skills || []).join(', '),
+        budget_time_limit: profile?.goal || '',
+      };
+      const result = await analyzeIdea(derivedIdeaForm);
+      setIdeaAnalysis(result);
+      saveValue('ideaAnalysis', result);
+      saveValue('ideaForm', derivedIdeaForm);
+      setNotice('Idea analysis generated — ready to share.');
+      return result;
+    } catch (requestError) {
+      setError(requestError.message);
+      return null;
+    } finally {
+      setAnalyzingIdea(false);
+    }
+  }
+
   async function handleSave() {
     if (!plan) return;
     setError('');
@@ -166,11 +198,15 @@ export default function ResultsPage() {
     }
     setSavingIdea(true);
     try {
+      // The Share tab needs the real idea-analysis shape (refined_idea,
+      // market_demand_score, etc.), not the profile-level `analysis` above -
+      // generate it now if it hasn't been already.
+      const analysisForSave = ideaAnalysis || (await handleGenerateAnalysis());
       await createSavedIdea({
         title: selectedIdea.startup_name || 'Untitled Idea',
         description: selectedIdea.pitch || '',
         idea_data: selectedIdea,
-        analysis: analysis || {},
+        analysis: analysisForSave || {},
         plan: plan || {},
         profile: profile || {},
       });
@@ -191,6 +227,7 @@ export default function ResultsPage() {
       setIdeas(nextIdeas);
       setSelectedIdea(nextIdeas[0] || null);
       setPlan(null);
+      setIdeaAnalysis(null);
       saveValue('ideas', nextIdeas);
       saveValue('selectedIdea', nextIdeas[0] || null);
       saveValue('plan', null);
@@ -271,6 +308,7 @@ export default function ResultsPage() {
                     onClick={() => {
                       setSelectedIdea(idea);
                       setPlan(null);
+                      setIdeaAnalysis(null);
                       saveValue('selectedIdea', idea);
                       saveValue('plan', null);
                     }}
@@ -323,6 +361,9 @@ export default function ResultsPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                       <h3 className="text-xl font-black uppercase leading-none">{plan.startup_name} Plan</h3>
                       <div className="flex gap-3">
+                        <button onClick={handleGenerateAnalysis} disabled={analyzingIdea} className="h-10 px-4 border-2 border-[#0A0A0A] bg-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#0A0A0A] hover:text-[#F5F3EE] transition-all duration-200 disabled:opacity-50">
+                          <Brain className="h-4 w-4" /> {analyzingIdea ? 'Analyzing...' : ideaAnalysis ? 'Regenerate Analysis' : 'Generate Analysis'}
+                        </button>
                         <button onClick={handleSave} disabled={saving} className="h-10 px-4 border-2 border-[#0A0A0A] bg-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#0A0A0A] hover:text-[#F5F3EE] transition-all duration-200 disabled:opacity-50">
                           <Save className="h-4 w-4" /> {saving ? 'Saving' : 'Save'}
                         </button>
@@ -338,6 +379,11 @@ export default function ResultsPage() {
                         </button>
                       </div>
                     </div>
+                    {ideaAnalysis && (
+                      <p className="text-[10px] font-black uppercase tracking-wide border-l-4 border-[#0A0A0A] pl-3 mb-4 text-[#6A6A6A]">
+                        Idea analysis ready — this will be attached when you Save to Ideas, and used by the Share tab.
+                      </p>
+                    )}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <ListBlock title="MVP Features" items={plan.mvp_features} />
                       <ListBlock title="Advantages" items={plan.our_advantages} />
