@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
-import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn } from 'lucide-react';
-import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, deleteTeam, getReportForIdea } from '../services/api.js';
+import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn, Eye, X } from 'lucide-react';
+import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getTeamAnalysisContent, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, deleteTeam, getReportForIdea } from '../services/api.js';
 import { useIdea } from '../contexts/IdeaContext.jsx';
 import IdeaSelector from '../components/IdeaSelector.jsx';
 import { getSession, readValue } from '../services/storage.js';
@@ -56,6 +56,59 @@ function UpsellPanel({ title, body, cta }) {
   );
 }
 
+function humanizeKey(key) {
+  return String(key).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function renderValue(value, depth = 0) {
+  if (value === null || value === undefined || value === '') {
+    return <span className="text-[#6A6A6A]">—</span>;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-[#6A6A6A]">—</span>;
+    return (
+      <ul className="list-disc list-inside space-y-1">
+        {value.map((item, i) => (
+          <li key={i} className="text-xs">{typeof item === 'object' && item !== null ? renderValue(item, depth + 1) : String(item)}</li>
+        ))}
+      </ul>
+    );
+  }
+  if (typeof value === 'object') {
+    const entries = Object.entries(value);
+    if (entries.length === 0) return <span className="text-[#6A6A6A]">—</span>;
+    return (
+      <div className={depth > 0 ? 'pl-4 border-l-2 border-[#E8E6E1] space-y-3' : 'space-y-3'}>
+        {entries.map(([k, v]) => (
+          <div key={k}>
+            <div className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A] mb-1">{humanizeKey(k)}</div>
+            <div className="text-xs">{typeof v === 'object' && v !== null ? renderValue(v, depth + 1) : String(v)}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <span className="text-xs whitespace-pre-wrap">{String(value)}</span>;
+}
+
+function AnalysisViewerModal({ data, onClose }) {
+  if (!data) return null;
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6" onClick={onClose}>
+      <div className="bg-[#F5F3EE] border-2 border-[#0A0A0A] max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-[#0A0A0A] text-[#F5F3EE] px-6 py-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest">{data.title}</h3>
+            <p className="text-[10px] text-[#C0BDB6] mt-0.5">Shared by {data.added_by_name || 'a teammate'}</p>
+          </div>
+          <button onClick={onClose} className="p-1 hover:opacity-70"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="p-6">{renderValue(data.content)}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function CollaborationHubPage() {
   const [activeTab, setActiveTab] = useState('share');
   const [loading, setLoading] = useState(false);
@@ -64,7 +117,7 @@ export default function CollaborationHubPage() {
   const profile = readValue('profile');
   const localIdea = readValue('selectedIdea');
   const localAnalysis = readValue('ideaAnalysis');
-  const { selectedIdea: savedIdea } = useIdea();
+  const { selectedIdea: savedIdea, savedIdeas } = useIdea();
   const selectedIdea = savedIdea?.idea_data || localIdea;
   const [shareReportType, setShareReportType] = useState('analysis');
   const [fetchedReport, setFetchedReport] = useState(null);
@@ -121,6 +174,10 @@ export default function CollaborationHubPage() {
   const [teamAnalyses, setTeamAnalyses] = useState([]);
   const [inviteEmail, setInviteEmail] = useState({});
   const [pendingInvites, setPendingInvites] = useState({});
+  const [addIdeaId, setAddIdeaId] = useState({});
+  const [addReportType, setAddReportType] = useState({});
+  const [viewingAnalysis, setViewingAnalysis] = useState(null);
+  const [viewLoading, setViewLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Comments
@@ -287,6 +344,33 @@ export default function CollaborationHubPage() {
       await loadTeams();
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
+  }
+
+  async function handleAddToTeamWorkspace(team) {
+    const ideaId = addIdeaId[team._id];
+    const reportType = addReportType[team._id] || EXPORT_TYPES[0].value;
+    if (!ideaId) { setError('Select an idea to add first.'); return; }
+    const idea = savedIdeas.find((i) => (i._id || i.id) === ideaId);
+    const typeLabel = EXPORT_TYPES.find((t) => t.value === reportType)?.label || reportType;
+    setLoading(true);
+    setError('');
+    try {
+      await addTeamAnalysis(team._id, reportType, ideaId, `${idea?.title || 'Untitled idea'} — ${typeLabel}`);
+      setNotice('Added to shared workspace.');
+      setAddIdeaId((prev) => ({ ...prev, [team._id]: '' }));
+      await loadTeamAnalyses(team);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function handleViewAnalysis(team, analysis) {
+    setViewLoading(true);
+    setError('');
+    try {
+      const res = await getTeamAnalysisContent(team._id, analysis._id || analysis.id);
+      setViewingAnalysis(res);
+    } catch (e) { setError(e.message); }
+    finally { setViewLoading(false); }
   }
 
   useEffect(() => {
@@ -594,19 +678,62 @@ export default function CollaborationHubPage() {
                               </div>
                             )}
 
-                            {selectedTeam?._id === team._id && teamAnalyses.length > 0 && (
-                              <div className="mt-3 pt-3 border-t border-[#0A0A0A]/20">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A]">Shared Analyses:</span>
-                                <div className="mt-1 space-y-1">
-                                  {teamAnalyses.map(a => (
-                                    <div key={a._id} className="text-xs flex items-center gap-2">
-                                      <span className="font-bold">{a.title}</span>
-                                      <Badge label={a.report_type} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                            {selectedTeam?._id === team._id && (() => {
+                              const ownerTrackedTypes = new Set(teamAnalyses.filter((a) => a.added_by === team.owner_id).map((a) => a.report_type));
+                              const availableTypes = isOwner ? EXPORT_TYPES : EXPORT_TYPES.filter((t) => ownerTrackedTypes.has(t.value));
+                              return (
+                                <div className="mt-3 pt-3 border-t border-[#0A0A0A]/20" onClick={(e) => e.stopPropagation()}>
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A]">Shared Workspace:</span>
+                                  {teamAnalyses.length === 0 ? (
+                                    <p className="text-[11px] text-[#6A6A6A] mt-1">Nothing shared yet.</p>
+                                  ) : (
+                                    <div className="mt-1 space-y-1">
+                                      {teamAnalyses.map(a => (
+                                        <div key={a._id} className="text-xs flex items-center gap-2">
+                                          <span className="font-bold">{a.title}</span>
+                                          <Badge label={a.report_type} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                                          <span className="text-[10px] text-[#6A6A6A]">by {a.added_by_name || '—'}</span>
+                                          <button onClick={() => handleViewAnalysis(team, a)} disabled={viewLoading} className="ml-auto text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-40">
+                                            <Eye className="h-3 w-3" /> View
+                                          </button>
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                  )}
+
+                                  {availableTypes.length === 0 ? (
+                                    <p className="text-[11px] text-[#6A6A6A] mt-3">Waiting on the team owner to add the first report type to track.</p>
+                                  ) : (
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      <select
+                                        value={addIdeaId[team._id] || ''}
+                                        onChange={(e) => setAddIdeaId((prev) => ({ ...prev, [team._id]: e.target.value }))}
+                                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none flex-1 min-w-[140px]"
+                                      >
+                                        <option value="">Select idea…</option>
+                                        {savedIdeas.map((i) => (
+                                          <option key={i._id || i.id} value={i._id || i.id}>{i.title || 'Untitled idea'}</option>
+                                        ))}
+                                      </select>
+                                      <select
+                                        value={addReportType[team._id] || availableTypes[0].value}
+                                        onChange={(e) => setAddReportType((prev) => ({ ...prev, [team._id]: e.target.value }))}
+                                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none"
+                                      >
+                                        {availableTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                      </select>
+                                      <button
+                                        onClick={() => handleAddToTeamWorkspace(team)}
+                                        disabled={loading || !addIdeaId[team._id]}
+                                        className="h-9 px-3 bg-[#0A0A0A] text-[#F5F3EE] text-[10px] font-black uppercase tracking-widest border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40 flex items-center gap-1"
+                                      >
+                                        <Plus className="h-3 w-3" /> Add
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
-                            </div>
-                          )}
+                              );
+                            })()}
                         </div>
                         );
                       })}
@@ -675,6 +802,7 @@ export default function CollaborationHubPage() {
           <UpsellPanel title="Comments" body="Commenting is a Team plan feature for collaborating with your teammates." cta="Upgrade to Team" />
         ))}
       </main>
+      {viewingAnalysis && <AnalysisViewerModal data={viewingAnalysis} onClose={() => setViewingAnalysis(null)} />}
     </div>
   );
 }

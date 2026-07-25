@@ -1107,6 +1107,16 @@ export async function getTeamAnalyses(teamId) {
   }
 }
 
+export async function getTeamAnalysisContent(teamId, analysisId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.get(`/api/teams/${teamId}/analyses/${analysisId}/content`);
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
 export async function createComment(targetType, targetId, section, text) {
   try {
     assertApiConfigured();
