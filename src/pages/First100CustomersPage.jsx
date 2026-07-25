@@ -39,7 +39,7 @@ export default function First100CustomersPage() {
       };
       const res = await generateFirst100Customers(data);
       setResult(res);
-      saveValue('first100Customers', res);
+      saveValue('customerPlan', res);
       setNotice('First 100 Customers plan generated.');
     } catch (requestError) {
       setError(requestError.message);

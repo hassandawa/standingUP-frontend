@@ -439,6 +439,24 @@ export async function getIdeaAnalysisForIdea(ideaId) {
   }
 }
 
+// There's no dedicated "get report by idea + type" endpoint on the backend.
+// The saved-idea document itself carries the analysis (in its `analysis`
+// field) and any other report types that have been linked to it (in
+// `hub_reports`, keyed by report type). This reads from that document so
+// callers don't need to know the storage shape.
+export async function getReportForIdea(reportType, ideaId) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.get(`/api/saved-ideas/${ideaId}`);
+    const content = reportType === 'analysis'
+      ? (data.analysis || null)
+      : (data.hub_reports ? data.hub_reports[reportType] || null : null);
+    return { content };
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
 export async function getSavedAnalyses() {
   try {
     assertApiConfigured();

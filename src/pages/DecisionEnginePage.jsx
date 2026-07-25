@@ -44,7 +44,7 @@ export default function DecisionEnginePage() {
       };
       const res = await generateDecisionEngine(data);
       setResult(res);
-      saveValue('decisionEngine', res);
+      saveValue('decisionReport', res);
       setNotice('Decision engine report generated.');
     } catch (requestError) {
       setError(requestError.message);

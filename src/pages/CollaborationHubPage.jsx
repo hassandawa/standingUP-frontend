@@ -82,6 +82,23 @@ export default function CollaborationHubPage() {
   // Export
   const [exportType, setExportType] = useState('analysis');
   const [exportData, setExportData] = useState(null);
+  const [fetchedExportReport, setFetchedExportReport] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
+
+  useEffect(() => {
+    // 'analysis' is already covered by the fetch above (shareReportType),
+    // so only fetch here for the other report types to avoid a duplicate call.
+    if (exportType === 'analysis') { setFetchedExportReport(null); return; }
+    if (savedIdea?._id) {
+      setExportLoading(true);
+      getReportForIdea(exportType, savedIdea._id)
+        .then((data) => setFetchedExportReport(data.content || null))
+        .catch(() => setFetchedExportReport(null))
+        .finally(() => setExportLoading(false));
+    } else {
+      setFetchedExportReport(null);
+    }
+  }, [savedIdea?._id, exportType]);
 
   // Team
   const [teams, setTeams] = useState([]);
@@ -115,8 +132,14 @@ export default function CollaborationHubPage() {
   }
 
   function loadExportData() {
+    if (exportType === 'analysis') return analysis || null;
+    // Prefer the report fetched from the backend for the currently selected
+    // saved idea; fall back to sessionStorage from the last time this report
+    // type's page was generated in this browser session.
+    if (fetchedExportReport) return fetchedExportReport;
     const dataMap = {
-      analysis: analysis || null,
+      customer_strategy: readValue('customerPlan'),
+      decision_report: readValue('decisionReport'),
       business_plan: readValue('businessPlan'),
       customer_insights: readValue('customerInsights'),
       market_intelligence: readValue('marketIntelligence'),
@@ -368,10 +391,11 @@ export default function CollaborationHubPage() {
                     {EXPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
-                <button onClick={handleExportPdf} disabled={loading} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
+                <button onClick={handleExportPdf} disabled={loading || exportLoading} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
                   <Download className="h-4 w-4" /> {loading ? 'Exporting...' : 'Export'}
                 </button>
               </div>
+              {exportLoading && <p className="mt-3 text-[10px] font-bold text-[#6A6A6A]">Loading report for this idea…</p>}
             </div>
           </div>
         )}
@@ -388,10 +412,11 @@ export default function CollaborationHubPage() {
                     {EXPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
-                <button onClick={handleExportNotion} disabled={loading} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
+                <button onClick={handleExportNotion} disabled={loading || exportLoading} className="h-11 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
                   <Download className="h-4 w-4" /> {loading ? 'Exporting...' : 'Export'}
                 </button>
               </div>
+              {exportLoading && <p className="mt-3 text-[10px] font-bold text-[#6A6A6A]">Loading report for this idea…</p>}
             </div>
           </div>
         )}
