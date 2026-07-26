@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
-import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn, Eye, X } from 'lucide-react';
+import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn, Eye, X, FolderOpen } from 'lucide-react';
 import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getTeamAnalysisContent, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, deleteTeam, getReportForIdea } from '../services/api.js';
 import { useIdea } from '../contexts/IdeaContext.jsx';
 import IdeaSelector from '../components/IdeaSelector.jsx';
@@ -13,6 +13,7 @@ const TABS = [
   { key: 'pdf', label: 'Export PDF', icon: FileDown },
   { key: 'notion', label: 'Export Notion', icon: BookOpen },
   { key: 'team', label: 'Team Workspace', icon: Users2 },
+  { key: 'workspace', label: 'Shared Workspace', icon: FolderOpen },
   { key: 'comments', label: 'Comments', icon: MessageSquare },
 ];
 
@@ -178,6 +179,7 @@ export default function CollaborationHubPage() {
   const [addReportType, setAddReportType] = useState({});
   const [viewingAnalysis, setViewingAnalysis] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
+  const [workspaceTeamId, setWorkspaceTeamId] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -432,6 +434,13 @@ export default function CollaborationHubPage() {
   }
 
   useEffect(() => { if (session?.token) loadTeams(); }, []);
+  useEffect(() => {
+    if (activeTab !== 'workspace' || teams.length === 0) return;
+    const team = teams.find((t) => t._id === workspaceTeamId) || teams[0];
+    setWorkspaceTeamId(team._id);
+    loadTeamAnalyses(team);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, teams]);
   useEffect(() => { loadComments(); }, [commentTargetType, commentTargetId]);
 
   return (
@@ -620,7 +629,7 @@ export default function CollaborationHubPage() {
                             <div className="flex flex-wrap gap-1 mt-2">
                               {(team.members || []).map((m, i) => (
                                 <span key={i} className="inline-flex items-center gap-1">
-                                  <Badge label={`${m.name || m.email} (${m.role})`} color={m.role === 'owner' ? 'bg-[#0A0A0A] text-white' : 'bg-[#E8E6E1] text-[#0A0A0A]'} />
+                                  <Badge label={`${m.name || m.email} (${m.role === 'owner' ? 'Owner' : 'Member'})`} color={m.role === 'owner' ? 'bg-[#0A0A0A] text-white' : 'bg-[#E8E6E1] text-[#0A0A0A]'} />
                                   {isOwner && m.role !== 'owner' && (
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRemoveMember(team, m.user_id); }}
@@ -677,63 +686,6 @@ export default function CollaborationHubPage() {
                                 )}
                               </div>
                             )}
-
-                            {selectedTeam?._id === team._id && (() => {
-                              const ownerTrackedTypes = new Set(teamAnalyses.filter((a) => a.added_by === team.owner_id).map((a) => a.report_type));
-                              const availableTypes = isOwner ? EXPORT_TYPES : EXPORT_TYPES.filter((t) => ownerTrackedTypes.has(t.value));
-                              return (
-                                <div className="mt-3 pt-3 border-t border-[#0A0A0A]/20" onClick={(e) => e.stopPropagation()}>
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A]">Shared Workspace:</span>
-                                  {teamAnalyses.length === 0 ? (
-                                    <p className="text-[11px] text-[#6A6A6A] mt-1">Nothing shared yet.</p>
-                                  ) : (
-                                    <div className="mt-1 space-y-1">
-                                      {teamAnalyses.map(a => (
-                                        <div key={a._id} className="text-xs flex items-center gap-2">
-                                          <span className="font-bold">{a.title}</span>
-                                          <Badge label={a.report_type} color="bg-[#E8E6E1] text-[#0A0A0A]" />
-                                          <span className="text-[10px] text-[#6A6A6A]">by {a.added_by_name || '—'}</span>
-                                          <button onClick={() => handleViewAnalysis(team, a)} disabled={viewLoading} className="ml-auto text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-40">
-                                            <Eye className="h-3 w-3" /> View
-                                          </button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-
-                                  {availableTypes.length === 0 ? (
-                                    <p className="text-[11px] text-[#6A6A6A] mt-3">Waiting on the team owner to add the first report type to track.</p>
-                                  ) : (
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                      <select
-                                        value={addIdeaId[team._id] || ''}
-                                        onChange={(e) => setAddIdeaId((prev) => ({ ...prev, [team._id]: e.target.value }))}
-                                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none flex-1 min-w-[140px]"
-                                      >
-                                        <option value="">Select idea…</option>
-                                        {savedIdeas.map((i) => (
-                                          <option key={i._id || i.id} value={i._id || i.id}>{i.title || 'Untitled idea'}</option>
-                                        ))}
-                                      </select>
-                                      <select
-                                        value={addReportType[team._id] || availableTypes[0].value}
-                                        onChange={(e) => setAddReportType((prev) => ({ ...prev, [team._id]: e.target.value }))}
-                                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none"
-                                      >
-                                        {availableTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                      </select>
-                                      <button
-                                        onClick={() => handleAddToTeamWorkspace(team)}
-                                        disabled={loading || !addIdeaId[team._id]}
-                                        className="h-9 px-3 bg-[#0A0A0A] text-[#F5F3EE] text-[10px] font-black uppercase tracking-widest border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40 flex items-center gap-1"
-                                      >
-                                        <Plus className="h-3 w-3" /> Add
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })()}
                         </div>
                         );
                       })}
@@ -742,6 +694,87 @@ export default function CollaborationHubPage() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {activeTab === 'workspace' && (
+          <div className="max-w-2xl">
+            {teams.length === 0 ? (
+              <div className="border-2 border-[#0A0A0A] bg-white p-8 text-center">
+                <h2 className="text-sm font-black uppercase tracking-widest mb-2">Shared Workspace</h2>
+                <p className="text-xs text-[#6A6A6A]">You're not on a team yet. Create or join one in Team Workspace first.</p>
+              </div>
+            ) : (() => {
+              const team = teams.find((t) => t._id === workspaceTeamId) || teams[0];
+              if (!team) return null;
+              const isOwner = team.owner_id === session?.user?.id;
+              const ownerTrackedTypes = new Set(teamAnalyses.filter((a) => a.added_by === team.owner_id).map((a) => a.report_type));
+              const availableTypes = isOwner ? EXPORT_TYPES : EXPORT_TYPES.filter((t2) => ownerTrackedTypes.has(t2.value));
+              return (
+                <div className="border-2 border-[#0A0A0A] bg-white p-6">
+                  <div className="flex items-center justify-between mb-4 gap-3">
+                    <h2 className="text-sm font-black uppercase tracking-widest">Shared Workspace</h2>
+                    {teams.length > 1 && (
+                      <select
+                        value={team._id}
+                        onChange={(e) => { setWorkspaceTeamId(e.target.value); loadTeamAnalyses(teams.find((t) => t._id === e.target.value)); }}
+                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none"
+                      >
+                        {teams.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+
+                  {teamAnalyses.length === 0 ? (
+                    <p className="text-xs text-[#6A6A6A] mb-4">Nothing shared yet.</p>
+                  ) : (
+                    <div className="space-y-2 mb-6">
+                      {teamAnalyses.map(a => (
+                        <div key={a._id} className="text-xs flex items-center gap-2 border border-[#0A0A0A]/20 p-3">
+                          <span className="font-bold">{a.title}</span>
+                          <Badge label={a.report_type} color="bg-[#E8E6E1] text-[#0A0A0A]" />
+                          <span className="text-[10px] text-[#6A6A6A]">by {a.added_by_name || '—'}</span>
+                          <button onClick={() => handleViewAnalysis(team, a)} disabled={viewLoading} className="ml-auto text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-40">
+                            <Eye className="h-3 w-3" /> View
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {availableTypes.length === 0 ? (
+                    <p className="text-[11px] text-[#6A6A6A]">Waiting on the team owner to add the first report type to track.</p>
+                  ) : (
+                    <div className="pt-4 border-t border-[#0A0A0A]/20 flex flex-wrap gap-2">
+                      <select
+                        value={addIdeaId[team._id] || ''}
+                        onChange={(e) => setAddIdeaId((prev) => ({ ...prev, [team._id]: e.target.value }))}
+                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none flex-1 min-w-[140px]"
+                      >
+                        <option value="">Select idea…</option>
+                        {savedIdeas.map((i) => (
+                          <option key={i._id || i.id} value={i._id || i.id}>{i.title || 'Untitled idea'}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={addReportType[team._id] || availableTypes[0].value}
+                        onChange={(e) => setAddReportType((prev) => ({ ...prev, [team._id]: e.target.value }))}
+                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none"
+                      >
+                        {availableTypes.map((t2) => <option key={t2.value} value={t2.value}>{t2.label}</option>)}
+                      </select>
+                      <button
+                        onClick={() => handleAddToTeamWorkspace(team)}
+                        disabled={loading || !addIdeaId[team._id]}
+                        className="h-9 px-3 bg-[#0A0A0A] text-[#F5F3EE] text-[10px] font-black uppercase tracking-widest border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40 flex items-center gap-1"
+                      >
+                        <Plus className="h-3 w-3" /> Add
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
