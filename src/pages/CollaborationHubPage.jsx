@@ -186,8 +186,8 @@ export default function CollaborationHubPage() {
   // Comments
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
-  const [commentTargetType, setCommentTargetType] = useState('analysis');
-  const [commentTargetId, setCommentTargetId] = useState('main');
+  const [commentTargetType, setCommentTargetType] = useState('team_analysis');
+  const [commentTargetId, setCommentTargetId] = useState('');
 
   const session = getSession();
   const userPlan = session?.user?.plan;
@@ -409,6 +409,7 @@ export default function CollaborationHubPage() {
   }
 
   async function loadComments() {
+    if (!commentTargetId) { setComments([]); return; }
     try {
       const c = await getComments(commentTargetType, commentTargetId);
       setComments(c);
@@ -416,7 +417,7 @@ export default function CollaborationHubPage() {
   }
 
   async function handleAddComment() {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || !commentTargetId) return;
     setLoading(true);
     try {
       await createComment(commentTargetType, commentTargetId, 'general', commentText.trim());
@@ -435,12 +436,21 @@ export default function CollaborationHubPage() {
 
   useEffect(() => { if (session?.token) loadTeams(); }, []);
   useEffect(() => {
-    if (activeTab !== 'workspace' || teams.length === 0) return;
+    if ((activeTab !== 'workspace' && activeTab !== 'comments') || teams.length === 0) return;
     const team = teams.find((t) => t._id === workspaceTeamId) || teams[0];
     setWorkspaceTeamId(team._id);
     loadTeamAnalyses(team);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, teams]);
+  useEffect(() => {
+    if (activeTab !== 'comments') return;
+    if (teamAnalyses.length === 0) { setCommentTargetId(''); return; }
+    if (!teamAnalyses.find((a) => a._id === commentTargetId)) {
+      setCommentTargetType('team_analysis');
+      setCommentTargetId(teamAnalyses[0]._id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, teamAnalyses]);
   useEffect(() => { loadComments(); }, [commentTargetType, commentTargetId]);
 
   return (
@@ -788,23 +798,35 @@ export default function CollaborationHubPage() {
             ) : (
               <>
                 <div className="border-2 border-[#0A0A0A] bg-white p-6">
-                  <h2 className="text-sm font-black uppercase tracking-widest mb-4">Comments</h2>
-                  <div className="flex items-end gap-3 mb-4">
-                    <div className="flex-1">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A] block mb-1">Target Type</label>
-                      <select value={commentTargetType} onChange={e => setCommentTargetType(e.target.value)} className="w-full h-10 px-3 border-2 border-[#0A0A0A] bg-white text-xs font-bold uppercase tracking-widest outline-none">
-                        {EXPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  <div className="flex items-center justify-between mb-4 gap-3">
+                    <h2 className="text-sm font-black uppercase tracking-widest">Comments</h2>
+                    {teams.length > 1 && (
+                      <select
+                        value={workspaceTeamId}
+                        onChange={(e) => { setWorkspaceTeamId(e.target.value); loadTeamAnalyses(teams.find((t) => t._id === e.target.value)); }}
+                        className="h-9 px-2 border-2 border-[#0A0A0A] bg-white text-[10px] font-bold uppercase tracking-widest outline-none"
+                      >
+                        {teams.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
                       </select>
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A] block mb-1">Target ID (default: main)</label>
-                      <input value={commentTargetId} onChange={e => setCommentTargetId(e.target.value)} placeholder="main" className="w-full h-10 px-3 border-2 border-[#0A0A0A] bg-white text-xs font-mono outline-none" />
-                    </div>
+                    )}
                   </div>
 
+                  {teamAnalyses.length === 0 ? (
+                    <p className="text-xs text-[#6A6A6A] mb-4">Nothing has been shared to this team yet. Comment threads live on shared items — add something in Shared Workspace first.</p>
+                  ) : (
+                    <div className="mb-4">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A] block mb-1">Commenting on</label>
+                      <select value={commentTargetId} onChange={e => setCommentTargetId(e.target.value)} className="w-full h-10 px-3 border-2 border-[#0A0A0A] bg-white text-xs font-bold outline-none">
+                        {teamAnalyses.map(a => (
+                          <option key={a._id} value={a._id}>{a.title} ({a.report_type}, by {a.added_by_name || '—'})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="flex gap-2 mb-6">
-                    <input value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddComment()} placeholder="Write a comment..." className="flex-1 h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs outline-none" />
-                    <button onClick={handleAddComment} disabled={loading || !commentText.trim()} className="h-11 px-5 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
+                    <input value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddComment()} placeholder="Write a comment..." disabled={!commentTargetId} className="flex-1 h-11 px-3 border-2 border-[#0A0A0A] bg-white text-xs outline-none disabled:opacity-40" />
+                    <button onClick={handleAddComment} disabled={loading || !commentText.trim() || !commentTargetId} className="h-11 px-5 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest flex items-center gap-2 border-2 border-[#0A0A0A] hover:bg-[#F5F3EE] hover:text-[#0A0A0A] transition-colors disabled:opacity-40">
                       <Send className="h-4 w-4" /> Send
                     </button>
                   </div>
