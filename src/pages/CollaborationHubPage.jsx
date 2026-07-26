@@ -192,10 +192,8 @@ export default function CollaborationHubPage() {
   const session = getSession();
   const userPlan = session?.user?.plan;
   const canExport = userPlan === 'pro' || userPlan === 'team';
-  const canUseComments = userPlan === 'team';
   const visibleTabs = TABS.filter((tab) => {
     if (tab.key === 'pdf' || tab.key === 'notion') return canExport;
-    if (tab.key === 'comments') return canUseComments;
     return true;
   });
 
@@ -788,12 +786,17 @@ export default function CollaborationHubPage() {
           </div>
         )}
 
-        {activeTab === 'comments' && (canUseComments ? (
+        {activeTab === 'comments' && (
           <div className="space-y-6 max-w-3xl">
             {!session?.token ? (
               <div className="p-8 border-2 border-[#0A0A0A] text-center">
                 <p className="text-sm font-bold uppercase tracking-widest text-[#6A6A6A]">Sign in to use comments</p>
                 <Link to="/signin" className="mt-4 inline-block h-10 px-6 bg-[#0A0A0A] text-[#F5F3EE] text-xs font-black uppercase tracking-widest leading-10">Sign In</Link>
+              </div>
+            ) : teams.length === 0 ? (
+              <div className="border-2 border-[#0A0A0A] bg-white p-8 text-center">
+                <h2 className="text-sm font-black uppercase tracking-widest mb-2">Comments</h2>
+                <p className="text-xs text-[#6A6A6A]">You're not on a team yet. Create or join one in Team Workspace first.</p>
               </div>
             ) : (
               <>
@@ -853,9 +856,7 @@ export default function CollaborationHubPage() {
               </>
             )}
           </div>
-        ) : (
-          <UpsellPanel title="Comments" body="Commenting is a Team plan feature for collaborating with your teammates." cta="Upgrade to Team" />
-        ))}
+        )}
       </main>
       {viewingAnalysis && <AnalysisViewerModal data={viewingAnalysis} onClose={() => setViewingAnalysis(null)} />}
     </div>
