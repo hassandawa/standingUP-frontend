@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppNav } from '../components/PageShell.jsx';
 import { Share2, FileDown, BookOpen, Users2, MessageSquare, Copy, CheckCheck, Link as LinkIcon, Download, ArrowRight, Plus, Trash2, Send, UserPlus, LogIn, Eye, X } from 'lucide-react';
 import { shareAnalysis, exportAsPdf, exportAsNotion, getMyTeams, createTeam, getTeamByInviteCode, joinTeam, getTeamAnalyses, addTeamAnalysis, getTeamAnalysisContent, getComments, createComment, deleteComment, inviteTeamMember, getPendingInvites, revokeTeamInvite, acceptTeamInvite, removeTeamMember, deleteTeam, getReportForIdea } from '../services/api.js';
@@ -179,6 +179,7 @@ export default function CollaborationHubPage() {
   const [viewingAnalysis, setViewingAnalysis] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Comments
   const [comments, setComments] = useState([]);
@@ -190,10 +191,8 @@ export default function CollaborationHubPage() {
   const userPlan = session?.user?.plan;
   const canExport = userPlan === 'pro' || userPlan === 'team';
   const canUseComments = userPlan === 'team';
-  const canUseTeamWorkspace = userPlan === 'team' || teams.length > 0;
   const visibleTabs = TABS.filter((tab) => {
     if (tab.key === 'pdf' || tab.key === 'notion') return canExport;
-    if (tab.key === 'team') return canUseTeamWorkspace;
     if (tab.key === 'comments') return canUseComments;
     return true;
   });
@@ -377,7 +376,8 @@ export default function CollaborationHubPage() {
     const token = searchParams.get('accept_invite');
     if (!token) return;
     if (!session?.token) {
-      setError('Sign in or create an account first, then reopen this invite link to join the team.');
+      const returnTo = `/collaboration?accept_invite=${token}`;
+      navigate(`/signin?redirect=${encodeURIComponent(returnTo)}`, { replace: true });
       return;
     }
     (async () => {

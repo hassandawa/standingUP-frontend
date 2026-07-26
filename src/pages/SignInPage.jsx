@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { signInAccount } from '../services/api.js';
 import { setSession } from '../services/storage.js';
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ export default function SignInPage() {
     try {
       const auth = await signInAccount(form);
       setSession(auth);
-      navigate('/dashboard');
+      navigate(redirectTo);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -94,7 +96,7 @@ export default function SignInPage() {
             </form>
 
             <p className="text-center text-xs font-bold uppercase tracking-wide text-[#3A3A3A] mt-8">
-              No account? <Link to="/signup" className="font-black underline hover:text-[#000000]">Create one free</Link>
+              No account? <Link to={searchParams.get('redirect') ? `/signup?redirect=${encodeURIComponent(searchParams.get('redirect'))}` : '/signup'} className="font-black underline hover:text-[#000000]">Create one free</Link>
             </p>
             <div className="text-center mt-4">
               <Link to="/" className="text-[9px] font-black uppercase tracking-widest text-[#6A6A6A] hover:text-[#0A0A0A] transition-colors">Back to home</Link>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, Rocket } from 'lucide-react';
 import { signUpAccount } from '../services/api.js';
 import { setSession } from '../services/storage.js';
@@ -12,6 +12,8 @@ const checks = [
 
 export default function SignUpPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/input';
   const [form, setForm] = useState({ name: '', email: '', password: '', terms: false });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,7 +39,7 @@ export default function SignUpPage() {
         password: form.password,
       });
       setSession(auth);
-      navigate('/input');
+      navigate(redirectTo);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -114,7 +116,7 @@ export default function SignUpPage() {
             </form>
 
             <p className="text-center text-xs font-bold text-[#6A6A6A] mt-8 uppercase tracking-wide">
-              Have account? <Link to="/signin" className="text-[#0A0A0A] underline font-black">Sign in</Link>
+              Have account? <Link to={searchParams.get('redirect') ? `/signin?redirect=${encodeURIComponent(searchParams.get('redirect'))}` : '/signin'} className="text-[#0A0A0A] underline font-black">Sign in</Link>
             </p>
             <div className="text-center mt-4">
               <Link to="/" className="text-[9px] font-black uppercase tracking-widest text-[#C0BDB6] hover:text-[#0A0A0A] transition-colors">Back to home</Link>
