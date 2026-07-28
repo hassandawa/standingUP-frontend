@@ -41,7 +41,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const raw = sessionStorage.getItem('startingup.session');
+  const raw = localStorage.getItem('startingup.session') || sessionStorage.getItem('startingup.session');
   if (raw) {
     try {
       const session = JSON.parse(raw);
@@ -116,7 +116,9 @@ export async function signInAccount(payload) {
     const { data } = await api.post('/api/auth/signin', payload);
     return data;
   } catch (error) {
-    throw new Error(apiError(error));
+    const wrapped = new Error(apiError(error));
+    wrapped.status = error.response?.status;
+    throw wrapped;
   }
 }
 
@@ -164,6 +166,26 @@ export async function resetPassword(token, newPassword) {
   try {
     assertApiConfigured();
     const { data } = await api.post('/api/auth/reset-password', { token, new_password: newPassword });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function verifyEmail(token) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/auth/verify-email', { token });
+    return data;
+  } catch (error) {
+    throw new Error(apiError(error));
+  }
+}
+
+export async function resendVerificationEmail(email) {
+  try {
+    assertApiConfigured();
+    const { data } = await api.post('/api/auth/resend-verification', { email });
     return data;
   } catch (error) {
     throw new Error(apiError(error));
@@ -231,7 +253,7 @@ export async function analyzeIdea(payload) {
 }
 
 function getAuthHeaders() {
-  const raw = sessionStorage.getItem('startingup.session');
+  const raw = localStorage.getItem('startingup.session') || sessionStorage.getItem('startingup.session');
   if (raw) {
     try {
       const session = JSON.parse(raw);

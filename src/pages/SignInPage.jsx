@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { signInAccount } from '../services/api.js';
+import { resendVerificationEmail, signInAccount } from '../services/api.js';
 import { setSession } from '../services/storage.js';
 
 export default function SignInPage() {
@@ -9,25 +9,46 @@ export default function SignInPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/dashboard';
   const [form, setForm] = useState({ email: '', password: '' });
+  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
     setNotice('');
+    setNeedsVerification(false);
     if (!form.email || !form.password) { setError('Email and password are required.'); return; }
     setLoading(true);
     try {
       const auth = await signInAccount(form);
-      setSession(auth);
+      setSession(auth, remember);
       navigate(redirectTo);
     } catch (requestError) {
       setError(requestError.message);
+      if (requestError.status === 403) {
+        setNeedsVerification(true);
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setError('');
+    setNotice('');
+    setResending(true);
+    try {
+      const result = await resendVerificationEmail(form.email);
+      setNotice(result.message);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -76,11 +97,18 @@ export default function SignInPage() {
               </div>
 
               {error && <p className="text-[10px] font-black uppercase tracking-wide border-l-2 border-[#0A0A0A] pl-2 mt-4 text-[#0A0A0A]">{error}</p>}
+              {needsVerification && (
+                <button type="button" onClick={handleResend} disabled={resending}
+                  className="text-[10px] font-black uppercase tracking-wide underline mt-2 disabled:opacity-50">
+                  {resending ? 'Sending...' : 'Resend verification email'}
+                </button>
+              )}
               {notice && <p className="text-[10px] font-black uppercase tracking-wide border-l-2 border-[#0A0A0A] pl-2 mt-4 text-[#0A0A0A]">{notice}</p>}
 
               <div className="flex items-center justify-between mt-6">
                 <label className="flex items-center gap-2 cursor-pointer border-2 border-[#0A0A0A] p-3 bg-white">
-                  <input type="checkbox" className="h-4 w-4 border-2 border-[#0A0A0A] appearance-none checked:bg-[#0A0A0A] cursor-pointer shrink-0" />
+                  <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)}
+                    className="h-4 w-4 border-2 border-[#0A0A0A] appearance-none checked:bg-[#0A0A0A] cursor-pointer shrink-0" />
                   <span className="text-xs font-bold uppercase tracking-wide text-[#3A3A3A]">Remember me</span>
                 </label>
                 <Link to="/forgot-password"

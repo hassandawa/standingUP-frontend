@@ -11,6 +11,7 @@ import SignInPage from './pages/SignInPage.jsx';
 import SignUpPage from './pages/SignUpPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import VerifyEmailPage from './pages/VerifyEmailPage.jsx';
 import StartupDetailPage from './pages/StartupDetailPage.jsx';
 import ComparisonPage from './pages/ComparisonPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
@@ -37,6 +38,7 @@ export default function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/input" element={<InputPage />} />
       <Route path="/results" element={<ResultsPage />} />
       <Route path="/analyze-idea" element={<IdeaAnalysisPage />} />

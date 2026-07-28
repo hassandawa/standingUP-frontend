@@ -42,16 +42,33 @@ export function clearGeneratedState() {
   });
 }
 
-export function setSession(auth) {
-  saveValue('session', auth);
+// Session storage clears when the tab/browser closes; localStorage persists
+// across browser restarts. "Remember me" decides which one backs the
+// session, and reads always check both so a page reload works either way.
+export function setSession(auth, remember = false) {
+  const raw = JSON.stringify(auth);
+  if (remember) {
+    localStorage.setItem(KEYS.session, raw);
+    sessionStorage.removeItem(KEYS.session);
+  } else {
+    sessionStorage.setItem(KEYS.session, raw);
+    localStorage.removeItem(KEYS.session);
+  }
   window.dispatchEvent(new Event('startingup:session-changed'));
 }
 
 export function getSession() {
-  return readValue('session');
+  const raw = localStorage.getItem(KEYS.session) || sessionStorage.getItem(KEYS.session);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 export function clearSession() {
+  localStorage.removeItem(KEYS.session);
   sessionStorage.removeItem(KEYS.session);
   window.dispatchEvent(new Event('startingup:session-changed'));
 }
