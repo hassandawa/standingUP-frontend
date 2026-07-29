@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { resendVerificationEmail, signInAccount } from '../services/api.js';
+import { signInAccount } from '../services/api.js';
 import { setSession } from '../services/storage.js';
 
 export default function SignInPage() {
@@ -14,14 +14,11 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [resending, setResending] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
     setNotice('');
-    setNeedsVerification(false);
     if (!form.email || !form.password) { setError('Email and password are required.'); return; }
     setLoading(true);
     try {
@@ -30,25 +27,8 @@ export default function SignInPage() {
       navigate(redirectTo);
     } catch (requestError) {
       setError(requestError.message);
-      if (requestError.status === 403) {
-        setNeedsVerification(true);
-      }
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleResend() {
-    setError('');
-    setNotice('');
-    setResending(true);
-    try {
-      const result = await resendVerificationEmail(form.email);
-      setNotice(result.message);
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setResending(false);
     }
   }
 
@@ -97,12 +77,6 @@ export default function SignInPage() {
               </div>
 
               {error && <p className="text-[10px] font-black uppercase tracking-wide border-l-2 border-[#0A0A0A] pl-2 mt-4 text-[#0A0A0A]">{error}</p>}
-              {needsVerification && (
-                <button type="button" onClick={handleResend} disabled={resending}
-                  className="text-[10px] font-black uppercase tracking-wide underline mt-2 disabled:opacity-50">
-                  {resending ? 'Sending...' : 'Resend verification email'}
-                </button>
-              )}
               {notice && <p className="text-[10px] font-black uppercase tracking-wide border-l-2 border-[#0A0A0A] pl-2 mt-4 text-[#0A0A0A]">{notice}</p>}
 
               <div className="flex items-center justify-between mt-6">

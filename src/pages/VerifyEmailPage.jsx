@@ -78,11 +78,11 @@ export default function VerifyEmailPage() {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="text-sm font-black uppercase tracking-widest text-green-700">Email Verified</span>
                   </div>
-                  <p className="text-xs text-green-700">Your email has been confirmed. You can now sign in.</p>
+                  <p className="text-xs text-green-700">Your email has been confirmed. Thanks for verifying!</p>
                 </div>
-                <Link to="/signin"
+                <Link to="/dashboard"
                   className="block w-full border-2 border-[#0A0A0A] p-4 text-xs font-black uppercase tracking-widest text-center bg-[#0A0A0A] text-[#F5F3EE] hover:bg-white hover:text-[#0A0A0A] transition-colors duration-150">
-                  Sign In
+                  Go to Dashboard
                 </Link>
               </div>
             )}
