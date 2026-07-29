@@ -219,7 +219,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20">
+      <section id="why-it-matters" className="py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="section-label mb-4">Why This Matters</span>
@@ -242,7 +242,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t-2 border-[#0A0A0A] py-20 bg-white">
+      <section id="the-difference" className="border-t-2 border-[#0A0A0A] py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="section-label mb-4">The Difference</span>

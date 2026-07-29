@@ -26,7 +26,9 @@ const STRATEGIES = [
 
 const RESOURCES = [
   { label: 'How It Works', path: '/#how-it-works', desc: 'See the platform in action' },
-  { label: 'Documentation', path: '/#features', desc: 'Guides & API reference' },
+  { label: 'Why It Matters', path: '/#why-it-matters', desc: 'Built for students, by builders' },
+  { label: 'The Difference', path: '/#the-difference', desc: 'Generic AI vs. startingUP' },
+  { label: 'Features', path: '/#features', desc: 'Everything you need to launch' },
   { label: 'FAQ', path: '/#faq', desc: 'Common questions answered' },
 ];
 
