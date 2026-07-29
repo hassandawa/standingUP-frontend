@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Brain, Code, Lightbulb, Play, Rocket, Search, Sparkles, Target, TrendingUp, Zap, Wand2 } from 'lucide-react';
+import { ArrowRight, Brain, Check, Code, Lightbulb, Play, Rocket, Search, Sparkles, Target, TrendingUp, X, Zap, Wand2 } from 'lucide-react';
 import { AppNav, BrandLink } from '../components/PageShell.jsx';
 import DemoVideoModal from '../components/DemoVideoModal.jsx';
 import ContactModal from '../components/ContactModal.jsx';
@@ -18,6 +18,49 @@ const features = [
 ];
 
 const sampleSkills = 'Full-Stack Development, AI/ML, UI/UX Design, Cloud Computing';
+
+const comparisons = [
+  {
+    limitation: 'No Personalization',
+    generic: 'Same advice for everyone. "Start a SaaS" — even if you have $0 and no coding skills.',
+    ours: 'Founder Profile Analysis — input your skills, interests, budget, and time. Get ideas that match YOUR reality.',
+  },
+  {
+    limitation: 'No Persistence',
+    generic: 'Chat history lost. Start over every session. No progress tracking.',
+    ours: 'Saved Ideas + Dashboard — all your plans saved. Track progress. Pick up where you left off.',
+  },
+  {
+    limitation: 'No Actionable Plans',
+    generic: '"Here are 10 ideas!" — great. Now what? No roadmap. No next steps.',
+    ours: 'Full MVP Roadmap — week-by-week plan with tasks, deliverables, and milestones.',
+  },
+  {
+    limitation: 'No Market Context',
+    generic: 'Generic suggestions without market analysis. "Build an app for X" — is there even demand?',
+    ours: 'Competitor Analysis + Market Intelligence — real market data, competitor landscape, positioning strategy.',
+  },
+  {
+    limitation: 'No Financial Planning',
+    generic: '"Raise funding" — how much? From where? What\u2019s the burn rate?',
+    ours: 'Revenue Model + Financial Plan — pricing strategy, break-even analysis, funding recommendations.',
+  },
+  {
+    limitation: 'No Marketing Strategy',
+    generic: '"Post on social media" — which platforms? What content? What budget?',
+    ours: 'Marketing Hub — channel strategy, content calendar, customer acquisition plan, budget allocation.',
+  },
+  {
+    limitation: 'No Collaboration',
+    generic: 'Single-user experience. Can\u2019t share with co-founders or advisors.',
+    ours: 'Team Collaboration — share plans, assign tasks, get feedback from your team.',
+  },
+  {
+    limitation: 'No Validation',
+    generic: '"Great idea!" — but is it really? No scoring. No reality check.',
+    ours: 'AI Judge + Decision Engine — brutally honest scoring of your idea\u2019s viability, risk assessment, go/no-go decision.',
+  },
+];
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -193,6 +236,40 @@ export default function LandingPage() {
               <div key={item.title} className="border-2 border-[#0A0A0A] bg-white p-6 card-hover">
                 <h3 className="text-sm font-black uppercase tracking-tight mb-2">{item.title}</h3>
                 <p className="text-xs font-medium text-[#3A3A3A] leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t-2 border-[#0A0A0A] py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="section-label mb-4">The Difference</span>
+            <h2 className="text-3xl md:text-5xl font-black tracking-[-0.02em] leading-none mb-4">Generic AI tools fail founders</h2>
+            <p className="text-sm font-medium text-[#3A3A3A] leading-relaxed">They treat everyone the same. startingUP doesn't.</p>
+          </div>
+
+          <div className="hidden lg:grid grid-cols-12 gap-4 mb-3 px-6">
+            <div className="col-span-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#6A6A6A]">Limitation</div>
+            <div className="col-span-4 text-[10px] font-black uppercase tracking-[0.15em] text-[#6A6A6A]">Generic AI Tools</div>
+            <div className="col-span-5 text-[10px] font-black uppercase tracking-[0.15em] text-[#6A6A6A]">startingUP</div>
+          </div>
+
+          <div className="space-y-3">
+            {comparisons.map((row) => (
+              <div key={row.limitation} className="border-2 border-[#0A0A0A] bg-[#F5F3EE] p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
+                <div className="lg:col-span-3">
+                  <span className="inline-block text-[10px] font-black uppercase tracking-widest bg-[#0A0A0A] text-[#F5F3EE] px-2 py-1">{row.limitation}</span>
+                </div>
+                <div className="lg:col-span-4 flex gap-2">
+                  <X className="h-4 w-4 text-[#C0BDB6] shrink-0 mt-0.5" />
+                  <p className="text-xs font-medium text-[#6A6A6A] leading-relaxed">{row.generic}</p>
+                </div>
+                <div className="lg:col-span-5 flex gap-2">
+                  <Check className="h-4 w-4 text-[#0A0A0A] shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-[#0A0A0A] leading-relaxed">{row.ours}</p>
+                </div>
               </div>
             ))}
           </div>
